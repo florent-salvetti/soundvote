@@ -10,7 +10,7 @@ Reference de mecanique : le party game "Use Your Words" (le public rejoint via u
 
 ## Stack imposee (ne pas changer sans me demander)
 
-- Next.js 15, App Router, TypeScript strict
+- Next.js 16, App Router, TypeScript strict (proxy.ts remplace middleware.ts)
 - Supabase : Postgres + Realtime + Auth (le DJ a un compte, le public non)
 - Tailwind CSS
 - Deploiement : Vercel

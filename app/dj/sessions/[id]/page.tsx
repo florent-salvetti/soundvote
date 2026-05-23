@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { launchRound, closeRound } from '@/app/actions/round'
 import LiveResults from './live-results'
 import SessionQR from './session-qr'
-import { computeWinner, type ResultRow } from '@/lib/round-results'
+import RoundHistory from './round-history'
+import { type ResultRow } from '@/lib/round-results'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,8 +66,8 @@ export default async function SessionPage({
     }
   }
 
-  let lastClosedRound: { id: string; question: string } | null = null
-  let lastClosedResults: ResultRow[] = []
+  type ClosedRound = { id: string; question: string; results: ResultRow[] }
+  let closedRounds: ClosedRound[] = []
   if (!activeRound) {
     const { data: closedData } = await supabase
       .from('rounds')
@@ -74,17 +75,15 @@ export default async function SessionPage({
       .eq('session_id', id)
       .eq('status', 'closed')
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (closedData) {
-      lastClosedRound = closedData as { id: string; question: string }
-      const { data: rpcData } = await supabase.rpc('get_round_results', { p_round_id: closedData.id })
-      lastClosedResults = (rpcData as ResultRow[]) ?? []
+    if (closedData && closedData.length > 0) {
+      closedRounds = await Promise.all(
+        (closedData as { id: string; question: string }[]).map(async (r) => {
+          const { data } = await supabase.rpc('get_round_results', { p_round_id: r.id })
+          return { ...r, results: (data as ResultRow[]) ?? [] }
+        })
+      )
     }
   }
-
-  const closedWinner = lastClosedRound ? computeWinner(lastClosedResults) : null
-  const closedTotalVotes = lastClosedResults.reduce((sum, r) => sum + r.total, 0)
 
   const headersList = await headers()
   const host = headersList.get('host') ?? 'localhost:3000'
@@ -176,68 +175,8 @@ export default async function SessionPage({
           </div>
         ) : (
           <div>
-            {/* ── Resultats manche precedente ── */}
-            {lastClosedRound && closedWinner && (
-              <div className="mb-8 rounded-2xl border border-border bg-surface p-5">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-dim">
-                  Manche precedente
-                </p>
-                <p className="mb-4 text-sm text-gray-mid">{lastClosedRound.question}</p>
-
-                <div className="mb-5 rounded-xl bg-surface-2 px-4 py-3">
-                  {closedWinner.type === 'none' && (
-                    <p className="text-sm text-gray-mid">Aucun vote sur cette manche.</p>
-                  )}
-                  {closedWinner.type === 'single' && (
-                    <p className="font-display font-bold">
-                      Gagnant{' '}
-                      <span className="text-neon-green text-glow-green">
-                        {closedWinner.winners[0].label}
-                      </span>
-                    </p>
-                  )}
-                  {closedWinner.type === 'tie' && (
-                    <p className="font-display font-bold">
-                      Egalite{' '}
-                      <span className="text-neon-magenta">
-                        {closedWinner.winners.map((w) => w.label).join(' et ')}
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                {lastClosedResults.length > 0 && (
-                  <div className="flex flex-col gap-4">
-                    {lastClosedResults.map((r) => {
-                      const pct = closedTotalVotes > 0
-                        ? Math.round((r.total / closedTotalVotes) * 100)
-                        : 0
-                      return (
-                        <div key={r.option_id}>
-                          <div className="mb-1.5 flex items-baseline justify-between gap-4">
-                            <div className="min-w-0">
-                              <span className="text-sm font-semibold text-gray-hi">{r.label}</span>
-                              {r.artist && (
-                                <span className="ml-2 text-xs text-gray-mid">{r.artist}</span>
-                              )}
-                            </div>
-                            <span className="shrink-0 text-xs tabular-nums text-gray-mid">
-                              {r.total} ({pct}%)
-                            </span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-                            <div
-                              className="bar-fill h-full rounded-full bg-neon-green/50"
-                              style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* ── Historique des manches cloturees ── */}
+            <RoundHistory rounds={closedRounds} />
 
             {/* ── Formulaire nouvelle manche ── */}
             <form action={launchRoundAction} className="flex flex-col gap-5">

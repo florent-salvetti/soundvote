@@ -121,12 +121,14 @@ export default function WaitingRoom({
     setIsVoting(false)
   }
 
-  // Ecran resultats (round clos)
+  // ── Ecran resultats (round clos) ──────────────────────────────────────────
+
   if (round?.status === 'closed') {
     if (!results) {
       return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
-          <p className="text-sm text-zinc-500">Calcul des resultats...</p>
+        <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green mb-4" />
+          <p className="text-sm text-gray-mid">Calcul des resultats...</p>
         </main>
       )
     }
@@ -135,65 +137,105 @@ export default function WaitingRoom({
     const totalVotes = results.reduce((sum, r) => sum + r.total, 0)
 
     return (
-      <main className="flex min-h-screen flex-col bg-black px-4 py-12 text-white">
-        <div className="mx-auto w-full max-w-md">
-          <p className="mb-6 text-sm text-zinc-500">Session {code}</p>
+      <main className="page-bg min-h-screen px-4 py-12 text-white">
+        <div className="mx-auto w-full max-w-sm">
+
+          <p className="mb-8 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+            Session {code}
+          </p>
 
           {/* Bandeau gagnant */}
-          <div className="mb-8 rounded-xl bg-zinc-900 px-5 py-4">
+          <div className="mb-8 rounded-2xl border border-border bg-surface px-6 py-6 text-center">
             {type === 'none' && (
-              <p className="font-semibold text-zinc-400">Aucun vote sur cette manche.</p>
+              <p className="text-sm text-gray-mid">Aucun vote sur cette manche.</p>
             )}
             {type === 'single' && (
-              <p className="font-semibold">
-                Gagnant : <span className="text-emerald-400">{winners[0].label}</span>
-              </p>
+              <>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neon-green">
+                  Gagnant
+                </p>
+                <p className="font-display text-3xl font-extrabold leading-tight text-neon-green text-glow-green">
+                  {winners[0].label}
+                </p>
+                {winners[0].artist && (
+                  <p className="mt-1 text-sm text-gray-mid">{winners[0].artist}</p>
+                )}
+              </>
             )}
             {type === 'tie' && (
-              <p className="font-semibold">
-                Egalite : <span className="text-emerald-400">{winners.map((w) => w.label).join(' et ')}</span>
-              </p>
+              <>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neon-magenta">
+                  Egalite
+                </p>
+                <p className="font-display text-2xl font-extrabold text-neon-magenta">
+                  {winners.map((w) => w.label).join(' / ')}
+                </p>
+              </>
             )}
           </div>
 
-          {/* Resultats par option */}
+          {/* Barres de resultats */}
           <div className="flex flex-col gap-4">
             {results.map((r) => {
               const pct = totalVotes > 0 ? Math.round((r.total / totalVotes) * 100) : 0
+              const isWinner = type !== 'none' && winners.some((w) => w.option_id === r.option_id)
+
               return (
-                <div key={r.option_id} className="rounded-2xl border border-zinc-800 px-6 py-5">
+                <div
+                  key={r.option_id}
+                  className={`rounded-2xl border px-5 py-4 transition-colors ${
+                    isWinner
+                      ? 'border-neon-green/30 bg-neon-green/5'
+                      : 'border-border bg-surface'
+                  }`}
+                >
                   <div className="mb-3 flex items-baseline justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="font-semibold">{r.label}</p>
-                      {r.artist && <p className="mt-1 text-sm text-zinc-400">{r.artist}</p>}
+                      <p className={`font-display font-bold ${isWinner ? 'text-neon-green' : 'text-gray-hi'}`}>
+                        {r.label}
+                      </p>
+                      {r.artist && (
+                        <p className="mt-0.5 text-xs text-gray-mid">{r.artist}</p>
+                      )}
                     </div>
-                    <span className="shrink-0 text-sm tabular-nums text-zinc-400">
-                      {r.total} <span className="text-zinc-600">({pct}%)</span>
+                    <span className={`shrink-0 font-display text-sm tabular-nums font-bold ${
+                      isWinner ? 'text-neon-green' : 'text-gray-mid'
+                    }`}>
+                      {pct}%
                     </span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
                     <div
-                      className="h-full rounded-full bg-zinc-500"
-                      style={{ width: `${pct}%` }}
+                      className={`bar-fill h-full rounded-full ${isWinner ? 'bg-neon-green' : 'bg-gray-dim'}`}
+                      style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
                     />
                   </div>
                 </div>
               )
             })}
           </div>
+
         </div>
       </main>
     )
   }
 
-  // Ecran vote (round en cours)
+  // ── Ecran vote (round en cours) ──────────────────────────────────────────
+
   if (round?.status === 'voting') {
     return (
-      <main className="flex min-h-screen flex-col bg-black px-4 py-12 text-white">
-        <div className="mx-auto w-full max-w-md">
-          <p className="mb-6 text-sm text-zinc-500">Session {code}</p>
-          <h1 className="mb-8 text-2xl font-bold leading-snug">{round.question}</h1>
-          <div className="flex flex-col gap-3">
+      <main className="page-bg min-h-screen px-4 py-10 text-white">
+        <div className="mx-auto w-full max-w-sm">
+
+          <p className="mb-6 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+            Session {code}
+          </p>
+
+          <h1 className="mb-8 font-display text-2xl font-extrabold leading-tight text-white">
+            {round.question}
+          </h1>
+
+          <div className="flex flex-col gap-4">
             {round.options.map((o) => {
               const isVoted = votedOptionId === o.id
               const isOther = votedOptionId !== null && !isVoted
@@ -204,37 +246,64 @@ export default function WaitingRoom({
                   onClick={() => handleVote(o.id)}
                   disabled={!!votedOptionId || isVoting}
                   className={[
-                    'w-full rounded-2xl border px-6 py-5 text-left transition-colors disabled:cursor-default',
+                    'w-full rounded-2xl border px-6 py-6 text-left transition-all duration-200',
+                    'active:scale-[0.98] disabled:cursor-default',
                     isVoted
-                      ? 'border-emerald-400 bg-emerald-400/10'
+                      ? 'border-neon-green bg-neon-green/10 glow-green'
                       : isOther
-                      ? 'border-zinc-800 opacity-40'
-                      : 'border-zinc-700 hover:border-zinc-400 active:border-zinc-300',
+                      ? 'border-border bg-surface opacity-30'
+                      : 'border-border bg-surface hover:border-neon-green/30 hover:bg-surface-2',
                   ].join(' ')}
                 >
-                  <p className="text-lg font-semibold">{o.label}</p>
-                  {o.artist && <p className="mt-1 text-sm text-zinc-400">{o.artist}</p>}
+                  <p className={`font-display text-xl font-bold ${isVoted ? 'text-neon-green' : 'text-white'}`}>
+                    {o.label}
+                  </p>
+                  {o.artist && (
+                    <p className={`mt-1 text-sm ${isVoted ? 'text-neon-green/70' : 'text-gray-mid'}`}>
+                      {o.artist}
+                    </p>
+                  )}
                   {isVoted && (
-                    <p className="mt-2 text-xs font-medium text-emerald-400">Vote enregistre</p>
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-neon-green">
+                      Vote enregistre ✓
+                    </p>
                   )}
                 </button>
               )
             })}
           </div>
+
         </div>
       </main>
     )
   }
 
-  // Ecran attente (pas encore de vote lance)
+  // ── Ecran attente (pas encore de vote lance) ──────────────────────────────
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
-      <div className="mb-8 flex items-center gap-2">
-        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-        <span className="text-sm text-zinc-400">Session {code}</span>
+    <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
+
+      <div className="mb-10">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+          Session
+        </p>
+        <p className="font-display text-7xl font-extrabold tracking-[.15em] text-white text-glow-green">
+          {code}
+        </p>
       </div>
-      <h1 className="text-2xl font-bold text-white">En attente du DJ...</h1>
-      <p className="mt-3 text-zinc-500">Le vote va bientot commencer.</p>
+
+      <div className="mb-4 flex items-center gap-2">
+        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-neon-green">
+          En direct
+        </span>
+      </div>
+
+      <h1 className="font-display text-2xl font-bold text-white">
+        En attente du DJ...
+      </h1>
+      <p className="mt-3 text-sm text-gray-mid">Le vote va bientot commencer.</p>
+
     </main>
   )
 }

@@ -35,7 +35,6 @@ export default async function SessionPage({
 
   if (!session) redirect('/dj')
 
-  // Round actif (lobby ou voting) pour cette session
   const { data: activeRound } = await supabase
     .from('rounds')
     .select('id, question, status')
@@ -66,7 +65,6 @@ export default async function SessionPage({
     }
   }
 
-  // Derniere manche cloturee — affichee au DJ apres cloture, avant la prochaine manche
   let lastClosedRound: { id: string; question: string } | null = null
   let lastClosedResults: ResultRow[] = []
   if (!activeRound) {
@@ -97,60 +95,79 @@ export default async function SessionPage({
   const closeRoundAction = activeRound ? closeRound.bind(null, id, activeRound.id) : null
 
   return (
-    <main className="min-h-screen bg-black px-4 py-12 text-white">
+    <main className="page-bg min-h-screen px-4 py-12 text-white">
       <div className="mx-auto w-full max-w-md">
 
         <Link
           href="/dj"
-          className="mb-10 inline-block text-sm text-zinc-500 transition-colors hover:text-white"
+          className="mb-8 inline-flex items-center gap-1.5 text-xs text-gray-mid transition-colors hover:text-white"
         >
-          Retour au tableau de bord
+          ← Tableau de bord
         </Link>
 
-        {/* Code, lien et QR */}
-        <div className="mb-8 flex items-center gap-4 rounded-xl border border-zinc-800 px-5 py-4">
-          <div className="min-w-0 flex-1">
-            <span className="font-mono text-2xl font-bold tracking-widest">{session.code}</span>
-            <p className="mt-1 truncate text-xs text-zinc-500">{joinUrl}</p>
+        {/* Code de session + QR */}
+        <div className="mb-8 rounded-2xl border border-border bg-surface p-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+            Code session
+          </p>
+          <div className="flex items-center gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-5xl font-extrabold tracking-[.2em] text-white text-glow-green">
+                {session.code}
+              </p>
+              <p className="mt-2 truncate text-xs text-gray-dim">{joinUrl}</p>
+            </div>
+            <div className="shrink-0 rounded-xl bg-white p-2">
+              <SessionQR url={joinUrl} />
+            </div>
           </div>
-          <SessionQR url={joinUrl} />
         </div>
 
         {errorMsg && (
-          <p className="mb-6 rounded-lg bg-red-950 px-4 py-3 text-sm text-red-400">
+          <p className="mb-6 rounded-xl border border-neon-magenta/20 bg-neon-magenta/10 px-4 py-3 text-sm text-neon-magenta">
             {decodeURIComponent(errorMsg)}
           </p>
         )}
 
         {activeRound ? (
-          /* Round en cours */
+          /* ── Round en cours ── */
           <div>
-            <div className="mb-4 flex items-center gap-2">
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">Vote en cours</span>
+            <div className="mb-5 flex items-center gap-2">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-neon-green">
+                Vote en cours
+              </span>
             </div>
-            <p className="mb-6 text-lg font-semibold">{activeRound.question}</p>
+
+            <p className="mb-6 font-display text-xl font-bold text-white">
+              {activeRound.question}
+            </p>
+
             <div className="flex flex-col gap-3">
               {roundOptions.map((o) => (
                 <div
                   key={o.id}
-                  className="rounded-xl border border-zinc-700 px-5 py-4"
+                  className="rounded-xl border border-border bg-surface px-5 py-3.5"
                 >
-                  <p className="font-semibold">{o.label}</p>
-                  {o.artist && <p className="mt-0.5 text-sm text-zinc-400">{o.artist}</p>}
+                  <p className="font-sans font-semibold text-gray-hi">{o.label}</p>
+                  {o.artist && (
+                    <p className="mt-0.5 text-xs text-gray-mid">{o.artist}</p>
+                  )}
                 </div>
               ))}
             </div>
+
             <LiveResults
               roundId={activeRound.id}
               options={roundOptions}
               initialCounts={initialCounts}
             />
+
             {closeRoundAction && (
               <form action={closeRoundAction} className="mt-8">
                 <button
                   type="submit"
-                  className="w-full rounded-xl border border-red-900 bg-red-950/50 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-950"
+                  className="w-full rounded-xl border border-neon-magenta/30 py-3.5 font-display text-sm font-bold tracking-wide text-neon-magenta transition-all hover:bg-neon-magenta/10 hover:glow-magenta"
                 >
                   Clore le vote
                 </button>
@@ -159,45 +176,59 @@ export default async function SessionPage({
           </div>
         ) : (
           <div>
-            {/* Resultats de la manche precedente */}
+            {/* ── Resultats manche precedente ── */}
             {lastClosedRound && closedWinner && (
-              <div className="mb-8 rounded-xl border border-zinc-800 px-5 py-5">
-                <p className="mb-1 text-xs text-zinc-600">Manche precedente</p>
-                <p className="mb-4 text-sm text-zinc-500">{lastClosedRound.question}</p>
-                <div className="mb-5 rounded-lg bg-zinc-900 px-4 py-3">
+              <div className="mb-8 rounded-2xl border border-border bg-surface p-5">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gray-dim">
+                  Manche precedente
+                </p>
+                <p className="mb-4 text-sm text-gray-mid">{lastClosedRound.question}</p>
+
+                <div className="mb-5 rounded-xl bg-surface-2 px-4 py-3">
                   {closedWinner.type === 'none' && (
-                    <p className="font-semibold text-zinc-400">Aucun vote sur cette manche.</p>
+                    <p className="text-sm text-gray-mid">Aucun vote sur cette manche.</p>
                   )}
                   {closedWinner.type === 'single' && (
-                    <p className="font-semibold">
-                      Gagnant : <span className="text-emerald-400">{closedWinner.winners[0].label}</span>
+                    <p className="font-display font-bold">
+                      Gagnant{' '}
+                      <span className="text-neon-green text-glow-green">
+                        {closedWinner.winners[0].label}
+                      </span>
                     </p>
                   )}
                   {closedWinner.type === 'tie' && (
-                    <p className="font-semibold">
-                      Egalite : <span className="text-emerald-400">{closedWinner.winners.map((w) => w.label).join(' et ')}</span>
+                    <p className="font-display font-bold">
+                      Egalite{' '}
+                      <span className="text-neon-magenta">
+                        {closedWinner.winners.map((w) => w.label).join(' et ')}
+                      </span>
                     </p>
                   )}
                 </div>
+
                 {lastClosedResults.length > 0 && (
                   <div className="flex flex-col gap-4">
                     {lastClosedResults.map((r) => {
-                      const pct = closedTotalVotes > 0 ? Math.round((r.total / closedTotalVotes) * 100) : 0
+                      const pct = closedTotalVotes > 0
+                        ? Math.round((r.total / closedTotalVotes) * 100)
+                        : 0
                       return (
                         <div key={r.option_id}>
                           <div className="mb-1.5 flex items-baseline justify-between gap-4">
                             <div className="min-w-0">
-                              <span className="font-semibold">{r.label}</span>
-                              {r.artist && <span className="ml-2 text-sm text-zinc-400">{r.artist}</span>}
+                              <span className="text-sm font-semibold text-gray-hi">{r.label}</span>
+                              {r.artist && (
+                                <span className="ml-2 text-xs text-gray-mid">{r.artist}</span>
+                              )}
                             </div>
-                            <span className="shrink-0 text-sm tabular-nums text-zinc-400">
-                              {r.total} <span className="text-zinc-600">({pct}%)</span>
+                            <span className="shrink-0 text-xs tabular-nums text-gray-mid">
+                              {r.total} ({pct}%)
                             </span>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
                             <div
-                              className="h-full rounded-full bg-zinc-600"
-                              style={{ width: `${pct}%` }}
+                              className="bar-fill h-full rounded-full bg-neon-green/50"
+                              style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
                             />
                           </div>
                         </div>
@@ -208,36 +239,42 @@ export default async function SessionPage({
               </div>
             )}
 
-            {/* Formulaire nouvelle manche */}
-            <form action={launchRoundAction} className="flex flex-col gap-6">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-zinc-400">Question</label>
+            {/* ── Formulaire nouvelle manche ── */}
+            <form action={launchRoundAction} className="flex flex-col gap-5">
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-widest text-gray-mid">
+                  Question
+                </label>
                 <input
                   name="question"
-                  required
                   placeholder="Quelle sera la prochaine chanson ?"
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-600 focus:border-zinc-400 focus:outline-none"
+                  className="rounded-lg border border-border bg-surface-2 px-4 py-3 text-sm text-white placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
                 />
               </div>
 
-              <div className="flex flex-col gap-4">
-                <p className="text-sm text-zinc-400">Options (2 minimum)</p>
-
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-mid">
+                  Options (2 minimum)
+                </p>
                 {[1, 2, 3, 4].map((n) => (
-                  <div key={n} className="flex flex-col gap-2 rounded-xl border border-zinc-800 p-4">
-                    <span className="text-xs text-zinc-600">
-                      Option {n}{n > 2 ? ' (optionnelle)' : ''}
+                  <div
+                    key={n}
+                    className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4"
+                  >
+                    <span className="text-xs text-gray-dim">
+                      Option {n}{n > 2 ? ' — optionnelle' : ''}
                     </span>
                     <input
                       name={`option_label_${n}`}
                       required={n <= 2}
                       placeholder="Titre"
-                      className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-white placeholder-zinc-600 focus:border-zinc-400 focus:outline-none"
+                      className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
                     />
                     <input
                       name={`option_artist_${n}`}
                       placeholder="Artiste (optionnel)"
-                      className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-white placeholder-zinc-600 focus:border-zinc-400 focus:outline-none"
+                      className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-gray-hi placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
                     />
                   </div>
                 ))}
@@ -245,7 +282,7 @@ export default async function SessionPage({
 
               <button
                 type="submit"
-                className="rounded-xl bg-white py-4 font-semibold text-black transition-colors hover:bg-zinc-200"
+                className="rounded-xl bg-neon-green py-4 font-display text-sm font-bold tracking-wide text-bg transition-all hover:brightness-110 hover:glow-green"
               >
                 Lancer le vote
               </button>

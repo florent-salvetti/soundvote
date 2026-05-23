@@ -31,11 +31,11 @@ export default function DeleteSessionButton({ sessionId }: { sessionId: string }
   }
 
   if (isPending) {
-    return <span className="text-xs text-zinc-500">Suppression...</span>
+    return <span className="text-xs italic text-gray-mid">Suppression...</span>
   }
 
   if (errorMsg) {
-    return <span className="text-xs text-red-400">{errorMsg}</span>
+    return <span className="text-xs text-neon-magenta">{errorMsg}</span>
   }
 
   if (confirming) {
@@ -43,13 +43,13 @@ export default function DeleteSessionButton({ sessionId }: { sessionId: string }
       <div className="flex items-center gap-3">
         <button
           onClick={handleCancel}
-          className="text-xs text-zinc-500 transition-colors hover:text-white"
+          className="text-xs text-gray-mid transition-colors hover:text-white"
         >
           Annuler
         </button>
         <button
           onClick={handleConfirm}
-          className="text-xs font-medium text-red-400 transition-colors hover:text-red-300"
+          className="text-xs font-semibold text-neon-magenta transition-all hover:glow-magenta"
         >
           Confirmer
         </button>
@@ -60,7 +60,7 @@ export default function DeleteSessionButton({ sessionId }: { sessionId: string }
   return (
     <button
       onClick={handleDelete}
-      className="text-xs text-zinc-600 transition-colors hover:text-red-400"
+      className="text-xs text-gray-dim transition-colors hover:text-neon-magenta"
     >
       Supprimer
     </button>

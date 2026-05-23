@@ -24,19 +24,19 @@ export default async function JoinPage({
 
   if (!session) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
-        <p className="mb-4 text-5xl text-zinc-600">?</p>
-        <h1 className="text-xl font-semibold text-white">Code inconnu</h1>
-        <p className="mt-2 text-zinc-400">Verifie le code avec le DJ et reessaie.</p>
+      <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <p className="mb-4 font-display text-6xl font-extrabold text-gray-dim">?</p>
+        <h1 className="font-display text-2xl font-bold text-white">Code inconnu</h1>
+        <p className="mt-3 text-sm text-gray-mid">Verifie le code avec le DJ et reessaie.</p>
       </main>
     )
   }
 
   if (session.status === 'closed') {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
-        <h1 className="text-xl font-semibold text-white">Session terminee</h1>
-        <p className="mt-2 text-zinc-400">La soiree est finie. A bientot.</p>
+      <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <h1 className="font-display text-2xl font-bold text-white">Session terminee</h1>
+        <p className="mt-3 text-sm text-gray-mid">La soiree est finie. A bientot.</p>
       </main>
     )
   }

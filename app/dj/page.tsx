@@ -17,43 +17,60 @@ export default async function DjPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <main className="min-h-screen bg-black px-4 py-12 text-white">
+    <main className="page-bg min-h-screen px-4 py-12 text-white">
       <div className="mx-auto w-full max-w-md">
 
+        {/* Header */}
         <div className="mb-10 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Tableau de bord DJ</h1>
+          <div>
+            <p className="font-display text-xs font-semibold uppercase tracking-widest text-neon-green">
+              SoundVote
+            </p>
+            <h1 className="font-display text-2xl font-extrabold text-white">
+              Tableau de bord DJ
+            </h1>
+          </div>
           <form>
             <button
               formAction={logout}
-              className="text-sm text-zinc-500 transition-colors hover:text-white"
+              className="text-xs text-gray-mid transition-colors hover:text-white"
             >
               Se deconnecter
             </button>
           </form>
         </div>
 
+        {/* CTA */}
         <form>
           <button
             formAction={createSession}
-            className="mb-10 w-full rounded-xl bg-white py-4 font-semibold text-black transition-colors hover:bg-zinc-200"
+            className="mb-10 w-full rounded-xl bg-neon-green py-4 font-display text-sm font-bold tracking-wide text-bg transition-all hover:brightness-110 hover:glow-green"
           >
-            Creer une session
+            + Creer une session
           </button>
         </form>
 
+        {/* Liste des sessions */}
         {sessions && sessions.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-mid">
               Sessions
-            </h2>
+            </p>
             {sessions.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-xl border border-zinc-800 px-5 py-4 transition-colors hover:border-zinc-600"
+                className="flex items-center justify-between rounded-xl border border-border bg-surface px-5 py-4 transition-colors hover:border-neon-green/20"
               >
-                <a href={`/dj/sessions/${s.id}`} className="flex flex-1 items-center gap-4">
-                  <span className="font-mono text-xl font-bold tracking-widest">{s.code}</span>
-                  <span className={`text-sm ${s.status === 'open' ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                <a href={`/dj/sessions/${s.id}`} className="flex flex-1 items-center gap-4 min-w-0">
+                  <span className="font-display text-xl font-extrabold tracking-widest text-white">
+                    {s.code}
+                  </span>
+                  <span className={`flex items-center gap-1.5 text-xs font-medium ${
+                    s.status === 'open' ? 'text-neon-green' : 'text-gray-dim'
+                  }`}>
+                    {s.status === 'open' && (
+                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
+                    )}
                     {s.status === 'open' ? 'En cours' : 'Terminee'}
                   </span>
                 </a>

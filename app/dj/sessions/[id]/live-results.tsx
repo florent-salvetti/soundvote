@@ -74,7 +74,7 @@ export default function LiveResults({
   const total = Object.values(counts).reduce((sum, n) => sum + n, 0)
 
   return (
-    <div className="mt-6 flex flex-col gap-5">
+    <div className="mt-6 flex flex-col gap-4">
       {options.map((o) => {
         const count = counts[o.id] ?? 0
         const pct = total > 0 ? Math.round((count / total) * 100) : 0
@@ -83,27 +83,26 @@ export default function LiveResults({
           <div key={o.id}>
             <div className="mb-1.5 flex items-baseline justify-between gap-4">
               <div className="min-w-0">
-                <span className="font-semibold">{o.label}</span>
+                <span className="font-sans text-sm font-semibold text-gray-hi">{o.label}</span>
                 {o.artist && (
-                  <span className="ml-2 text-sm text-zinc-400">{o.artist}</span>
+                  <span className="ml-2 text-xs text-gray-mid">{o.artist}</span>
                 )}
               </div>
-              <span className="shrink-0 text-sm tabular-nums text-zinc-400">
-                {count}{' '}
-                <span className="text-zinc-600">({pct}%)</span>
+              <span className="shrink-0 font-display text-sm tabular-nums text-neon-green">
+                {count} <span className="text-gray-dim text-xs">({pct}%)</span>
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
               <div
-                className="h-full rounded-full bg-emerald-400 transition-all duration-300"
-                style={{ width: `${pct}%` }}
+                className="bar-fill h-full rounded-full bg-neon-green"
+                style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
               />
             </div>
           </div>
         )
       })}
       {total === 0 && (
-        <p className="text-center text-sm text-zinc-600">En attente des premiers votes...</p>
+        <p className="text-center text-xs text-gray-dim">En attente des premiers votes...</p>
       )}
     </div>
   )

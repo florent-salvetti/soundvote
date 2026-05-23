@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   FONDATIONS VISUELLES — SoundVote
+   Palette club : fond noir, neon vert, neon magenta
+   Typo : Syne (titres/codes) + DM Sans (corps)
+   ============================================================ */
+
+@theme {
+  /* --- Couleurs --- */
+  --color-bg:            #0a0a0a;  /* fond principal */
+  --color-surface:       #111111;  /* cartes, panels */
+  --color-surface-2:     #181818;  /* surfaces imbriquees */
+  --color-border:        #222222;  /* bordures standard */
+  --color-border-dim:    #191919;  /* bordures subtiles */
+
+  --color-neon-green:    #c6ff3a;
+  --color-neon-magenta:  #ff2e9a;
+
+  --color-white:         #ffffff;
+  --color-gray-hi:       #e0e0e0;  /* texte secondaire clair */
+  --color-gray-mid:      #888888;  /* labels, meta */
+  --color-gray-dim:      #444444;  /* placeholders, desactive */
+
+  /* --- Rayon de bordure --- */
+  --radius-sm:   0.5rem;   /* 8px  — inputs, badges */
+  --radius-md:   0.75rem;  /* 12px — boutons */
+  --radius-lg:   1rem;     /* 16px — cartes standard */
+  --radius-xl:   1.25rem;  /* 20px — cartes larges */
+  --radius-2xl:  1.75rem;  /* 28px — grands blocs */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-syne);   /* titres, codes, headings */
+  --font-sans:    var(--font-dm-sans); /* corps, labels, boutons */
+  --font-mono:    var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================================
+   UTILITAIRES GLOW (neon)
+   Usage : class="glow-green"  /  class="glow-magenta"
+   ============================================================ */
+
+@utility glow-green {
+  box-shadow:
+    0 0 0 1px rgba(198, 255, 58, 0.15),
+    0 0 20px rgba(198, 255, 58, 0.2),
+    0 0 48px rgba(198, 255, 58, 0.07);
 }
+
+@utility glow-magenta {
+  box-shadow:
+    0 0 0 1px rgba(255, 46, 154, 0.15),
+    0 0 20px rgba(255, 46, 154, 0.2),
+    0 0 48px rgba(255, 46, 154, 0.07);
+}
+
+@utility text-glow-green {
+  text-shadow: 0 0 24px rgba(198, 255, 58, 0.55);
+}
+
+@utility text-glow-magenta {
+  text-shadow: 0 0 24px rgba(255, 46, 154, 0.55);
+}
+
+/* ============================================================
+   FOND AVEC HALOS (ambiance club)
+   Degrade magenta en haut, vert en bas, tres estompes
+   Usage : class="page-bg"
+   ============================================================ */
+
+@utility page-bg {
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -5%,  rgba(255, 46, 154, 0.13) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 105%, rgba(198, 255, 58, 0.10) 0%, transparent 70%);
+}
+
+/* ============================================================
+   ANIMATION BARRE DE VOTE
+   Usage : style="--bar-pct: 72%" + class="bar-fill"
+   ============================================================ */
+
+@keyframes bar-grow {
+  from { width: 0% }
+  to   { width: var(--bar-pct, 0%) }
+}
+
+@utility bar-fill {
+  animation: bar-grow 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0a0a0a;
+  color: #e0e0e0;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
 }

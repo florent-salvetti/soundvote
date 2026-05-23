@@ -9,8 +9,7 @@ export async function launchRound(sessionId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const question = (formData.get('question') as string)?.trim()
-  if (!question) redirect(`/dj/sessions/${sessionId}?error=Question+requise`)
+  const question = (formData.get('question') as string)?.trim() || 'Quelle sera la prochaine chanson ?'
 
   // Collecte les options non vides dans l'ordre du formulaire
   const options: { label: string; artist: string | null; position: number }[] = []

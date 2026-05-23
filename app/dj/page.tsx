@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
 import { createSession } from '@/app/actions/session'
+import DeleteSessionButton from './delete-session-button'
 import { redirect } from 'next/navigation'
 
 export default async function DjPage() {
@@ -46,16 +47,18 @@ export default async function DjPage() {
               Sessions
             </h2>
             {sessions.map((s) => (
-              <a
+              <div
                 key={s.id}
-                href={`/dj/sessions/${s.id}`}
                 className="flex items-center justify-between rounded-xl border border-zinc-800 px-5 py-4 transition-colors hover:border-zinc-600"
               >
-                <span className="font-mono text-xl font-bold tracking-widest">{s.code}</span>
-                <span className={`text-sm ${s.status === 'open' ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                  {s.status === 'open' ? 'En cours' : 'Terminee'}
-                </span>
-              </a>
+                <a href={`/dj/sessions/${s.id}`} className="flex flex-1 items-center gap-4">
+                  <span className="font-mono text-xl font-bold tracking-widest">{s.code}</span>
+                  <span className={`text-sm ${s.status === 'open' ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                    {s.status === 'open' ? 'En cours' : 'Terminee'}
+                  </span>
+                </a>
+                <DeleteSessionButton sessionId={s.id} />
+              </div>
             ))}
           </div>
         )}

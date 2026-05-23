@@ -21,6 +21,11 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Racine : redirige selon l'etat de connexion
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL(user ? '/dj' : '/login', request.url))
+  }
+
   // Routes DJ : rediriger vers /login si non connecte
   if (pathname.startsWith('/dj') && !user) {
     return NextResponse.redirect(new URL('/login', request.url))

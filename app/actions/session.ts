@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -42,4 +43,23 @@ export async function createSession() {
   }
 
   throw new Error(`Impossible de generer un code unique apres ${MAX_ATTEMPTS} tentatives`)
+}
+
+export async function deleteSession(sessionId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { error, count } = await supabase
+    .from('sessions')
+    .delete({ count: 'exact' })
+    .eq('id', sessionId)
+    .eq('dj_id', user.id)
+
+  if (error) return { error: `Erreur suppression : ${error.message}` }
+  // count === 0 = session inconnue ou n'appartient pas a ce DJ : pas un succes silencieux
+  if (count === 0) return { error: 'Session introuvable ou acces refuse' }
+
+  revalidatePath('/dj')
+  return {}
 }

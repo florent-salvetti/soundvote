@@ -52,7 +52,7 @@ Reference de mecanique : le party game "Use Your Words" (le public rejoint via u
 Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les decisions prises.
 
 - [x] Projet scaffolde (Next.js 15, Tailwind, Supabase SSR, middleware auth, clients browser/server)
-- [ ] Schema Supabase et migrations
+- [x] Schema Supabase et migrations (tables, RLS, vue vote_counts, fonction get_round_results, Realtime)
 - [ ] Auth DJ
 - [ ] Creation de session et code
 - [ ] Ecran public (join par code)
@@ -67,3 +67,4 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - QR code exclu du MVP. A ajouter apres deploiement.
 - Pas de domaine custom pour le MVP. localhost en dev, URL Vercel en prod.
 - Les policies RLS sont soumises a validation avant application.
+- get_round_results est SECURITY DEFINER sans verif d'appartenance (choix MVP conscient : UUID non devinable).

@@ -55,7 +55,7 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - [x] Schema Supabase et migrations (tables, RLS, vue vote_counts, fonction get_round_results, Realtime)
 - [x] Auth DJ (login/signup, proxy protection /dj/*, redirect bidirectionnel)
 - [x] Creation de session et code (alphabet non ambigu, retry sur 23505, lien partageable)
-- [ ] Ecran public (join par code)
+- [x] Ecran public (join par code, voter_anon_id localStorage, RLS anon teste)
 - [ ] Vote en temps reel (Realtime)
 - [ ] Console DJ avec resultats live
 - [ ] Cloture de manche et gagnant

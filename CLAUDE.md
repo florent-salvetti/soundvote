@@ -56,18 +56,20 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - [x] Auth DJ (login/signup, proxy protection /dj/*, redirect bidirectionnel)
 - [x] Creation de session et code (alphabet non ambigu, retry sur 23505, lien partageable)
 - [x] Ecran public (join par code, voter_anon_id localStorage, RLS anon teste)
-- [ ] Vote en temps reel (Realtime)
-- [ ] Console DJ avec resultats live
-- [ ] Cloture de manche et gagnant
+- [x] Vote en temps reel : composition manche DJ + bascule Realtime ecran public (rounds uniquement)
+- [x] Vote public avec feedback immediat + anti double-vote via localStorage (cle soundvote_vote_${roundId})
+- [x] Console DJ avec resultats live (LiveResults : initialCounts serveur + re-fetch au montage + Realtime votes INSERT)
+- [x] Cloture de manche : bouton DJ, bascule Realtime public vers resultats, bandeau gagnant/egalite/zero vote
 - [ ] Deploiement Vercel
 
 ## Contraintes techniques a respecter
 
-### Realtime (a appliquer a l'etape 7)
+### Realtime
 - Le public ne s'abonne JAMAIS a la table `votes` en Realtime. En mode public par defaut, Supabase Realtime ne filtre pas selon les RLS : un anon abonne a `votes` recevrait chaque insert en clair, ce qui casse toute la protection.
-- Le public s'abonne uniquement a `rounds` (pour detecter les transitions lobby -> voting -> closed). C'est sans risque : `rounds` est lisible par anon.
-- Seul le DJ (authenticated) s'abonne aux inserts sur `votes` pour son live. S'assurer que le canal est configure en mode prive avec l'autorisation Realtime activee.
-- A l'etape 7, avant de coder l'abonnement public, confirmer ce decoupage et verifier la config Realtime cote Supabase.
+- Le public s'abonne uniquement a `rounds` (UPDATE, filtre session_id). Canal : `session-rounds-${sessionId}`.
+- Seul le DJ (authenticated, client avec cookies) s'abonne aux inserts sur `votes`. Canal : `dj-votes-${roundId}`, filtre `round_id=eq.${roundId}`. Policy `dj_read_own_votes` assure que seuls ses propres votes lui sont relays.
+- Anti double-vote public : localStorage cle `soundvote_vote_${roundId}` = optionId. Au chargement, si la cle existe, afficher l'etat vote sans resoumettre. Contrainte UNIQUE (round_id, voter_anon_id) en base = garde-fou final.
+- LiveResults DJ : ordre strict au montage : 1) fetch vote_counts, 2) setCounts, 3) subscribe. Fenetre de course residuelle negligeable au niveau MVP.
 
 ## Decisions prises
 

@@ -8,7 +8,29 @@
       "PowerShell(Start-Sleep -Seconds 6; Invoke-WebRequest -Uri \"http://localhost:3000/dj\" -MaximumRedirection 0 -ErrorAction SilentlyContinue | Select-Object StatusCode, Headers)",
       "PowerShell(Start-Sleep -Seconds 8; Invoke-WebRequest -Uri \"http://localhost:3000/dj\" -MaximumRedirection 0 -ErrorAction SilentlyContinue | Select-Object StatusCode, @{N='Location';E={$_.Headers.Location}})",
       "Bash(npm run *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000/dj)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000/dj)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch *)",
+      "Bash(git checkout *)",
+      "Bash(git update-ref *)",
+      "Bash(git reflog *)",
+      "Bash(git gc *)",
+      "Bash(git stash *)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__fill",
+      "mcp__chrome-devtools__wait_for",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__select_page",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(gh api *)",
+      "Bash(xargs -I{} sh -c 'gh api repos/florent-salvetti/soundvote/commits/{} --jq \".files[].filename\" 2>/dev/null')",
+      "Bash(git add *)"
     ]
   }
 }

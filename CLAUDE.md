@@ -51,9 +51,9 @@ Reference de mecanique : le party game "Use Your Words" (le public rejoint via u
 
 Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les decisions prises.
 
-- [x] Projet scaffolde (Next.js 15, Tailwind, Supabase SSR, middleware auth, clients browser/server)
+- [x] Projet scaffolde (Next.js 16, Tailwind, Supabase SSR, proxy auth, clients browser/server)
 - [x] Schema Supabase et migrations (tables, RLS, vue vote_counts, fonction get_round_results, Realtime)
-- [ ] Auth DJ
+- [x] Auth DJ (login/signup, proxy protection /dj/*, redirect bidirectionnel)
 - [ ] Creation de session et code
 - [ ] Ecran public (join par code)
 - [ ] Vote en temps reel (Realtime)
@@ -71,6 +71,7 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 
 ## Decisions prises
 
+- Next.js 16 installe (create-next-app@latest), migre de la stack initiale 15. middleware.ts devient proxy.ts, export middleware -> export proxy. Fonctionnalite identique.
 - Supabase : cloud uniquement, pas de Docker local. Workflow : `supabase link` + `supabase db push`.
 - QR code exclu du MVP. A ajouter apres deploiement.
 - Pas de domaine custom pour le MVP. localhost en dev, URL Vercel en prod.

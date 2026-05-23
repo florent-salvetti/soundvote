@@ -4,7 +4,11 @@
       "PowerShell(Copy-Item *)",
       "PowerShell(New-Item *)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\soundvote\" -Force | Where-Object { $_.Name -ne \"node_modules\" } | Select-Object Name, Mode; Write-Host \"---\"; Get-ChildItem -Path \"C:\\\\soundvote\\\\app\" | Select-Object Name; Write-Host \"---\"; Get-ChildItem -Path \"C:\\\\soundvote\\\\lib\" -Recurse | Select-Object Name; Write-Host \"---\"; Get-ChildItem -Path \"C:\\\\soundvote\\\\supabase\" | Select-Object Name)",
-      "PowerShell(cd C:\\\\soundvote; Get-ChildItem -Force | Where-Object { $_.Name -ne \"node_modules\" } | Format-Table Name, Mode -AutoSize)"
+      "PowerShell(cd C:\\\\soundvote; Get-ChildItem -Force | Where-Object { $_.Name -ne \"node_modules\" } | Format-Table Name, Mode -AutoSize)",
+      "PowerShell(Start-Sleep -Seconds 6; Invoke-WebRequest -Uri \"http://localhost:3000/dj\" -MaximumRedirection 0 -ErrorAction SilentlyContinue | Select-Object StatusCode, Headers)",
+      "PowerShell(Start-Sleep -Seconds 8; Invoke-WebRequest -Uri \"http://localhost:3000/dj\" -MaximumRedirection 0 -ErrorAction SilentlyContinue | Select-Object StatusCode, @{N='Location';E={$_.Headers.Location}})",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3000/dj)"
     ]
   }
 }

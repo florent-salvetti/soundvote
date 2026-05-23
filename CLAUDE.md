@@ -61,6 +61,14 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - [ ] Cloture de manche et gagnant
 - [ ] Deploiement Vercel
 
+## Contraintes techniques a respecter
+
+### Realtime (a appliquer a l'etape 7)
+- Le public ne s'abonne JAMAIS a la table `votes` en Realtime. En mode public par defaut, Supabase Realtime ne filtre pas selon les RLS : un anon abonne a `votes` recevrait chaque insert en clair, ce qui casse toute la protection.
+- Le public s'abonne uniquement a `rounds` (pour detecter les transitions lobby -> voting -> closed). C'est sans risque : `rounds` est lisible par anon.
+- Seul le DJ (authenticated) s'abonne aux inserts sur `votes` pour son live. S'assurer que le canal est configure en mode prive avec l'autorisation Realtime activee.
+- A l'etape 7, avant de coder l'abonnement public, confirmer ce decoupage et verifier la config Realtime cote Supabase.
+
 ## Decisions prises
 
 - Supabase : cloud uniquement, pas de Docker local. Workflow : `supabase link` + `supabase db push`.

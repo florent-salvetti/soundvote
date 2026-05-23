@@ -110,14 +110,14 @@ export default async function SessionPage({
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-mid">
             Code session
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
               <p className="font-display text-5xl font-extrabold tracking-[.2em] text-white text-glow-green">
                 {session.code}
               </p>
               <p className="mt-2 truncate text-xs text-gray-dim">{joinUrl}</p>
             </div>
-            <div className="shrink-0 rounded-xl bg-white p-2">
+            <div className="shrink-0 self-start rounded-xl bg-white p-2 sm:self-auto">
               <SessionQR url={joinUrl} />
             </div>
           </div>

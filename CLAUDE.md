@@ -54,7 +54,7 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - [x] Projet scaffolde (Next.js 16, Tailwind, Supabase SSR, proxy auth, clients browser/server)
 - [x] Schema Supabase et migrations (tables, RLS, vue vote_counts, fonction get_round_results, Realtime)
 - [x] Auth DJ (login/signup, proxy protection /dj/*, redirect bidirectionnel)
-- [ ] Creation de session et code
+- [x] Creation de session et code (alphabet non ambigu, retry sur 23505, lien partageable)
 - [ ] Ecran public (join par code)
 - [ ] Vote en temps reel (Realtime)
 - [ ] Console DJ avec resultats live

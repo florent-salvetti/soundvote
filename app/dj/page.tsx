@@ -1,27 +1,65 @@
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
+import { createSession } from '@/app/actions/session'
 import { redirect } from 'next/navigation'
 
 export default async function DjPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Garde cote serveur en complement du middleware
   if (!user) redirect('/login')
 
+  const { data: sessions } = await supabase
+    .from('sessions')
+    .select('id, code, status, created_at')
+    .eq('dj_id', user.id)
+    .order('created_at', { ascending: false })
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black px-4">
-      <div className="w-full max-w-sm text-center">
-        <h1 className="mb-2 text-2xl font-bold text-white">Tableau de bord DJ</h1>
-        <p className="mb-8 text-zinc-400">{user.email}</p>
+    <main className="min-h-screen bg-black px-4 py-12 text-white">
+      <div className="mx-auto w-full max-w-md">
+
+        <div className="mb-10 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Tableau de bord DJ</h1>
+          <form>
+            <button
+              formAction={logout}
+              className="text-sm text-zinc-500 transition-colors hover:text-white"
+            >
+              Se deconnecter
+            </button>
+          </form>
+        </div>
+
         <form>
           <button
-            formAction={logout}
-            className="rounded-lg border border-zinc-700 px-6 py-2 text-sm text-zinc-400 transition-colors hover:border-zinc-400 hover:text-white"
+            formAction={createSession}
+            className="mb-10 w-full rounded-xl bg-white py-4 font-semibold text-black transition-colors hover:bg-zinc-200"
           >
-            Se deconnecter
+            Creer une session
           </button>
         </form>
+
+        {sessions && sessions.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <h2 className="text-sm font-medium uppercase tracking-widest text-zinc-500">
+              Sessions
+            </h2>
+            {sessions.map((s) => (
+              <a
+                key={s.id}
+                href={`/dj/sessions/${s.id}`}
+                className="flex items-center justify-between rounded-xl border border-zinc-800 px-5 py-4 transition-colors hover:border-zinc-600"
+              >
+                <span className="font-mono text-xl font-bold tracking-widest">{s.code}</span>
+                <span className={`text-sm ${s.status === 'open' ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                  {s.status === 'open' ? 'En cours' : 'Terminee'}
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
+
       </div>
     </main>
   )

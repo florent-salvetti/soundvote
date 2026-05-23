@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Copy-Item *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\soundvote\" -Force | Where-Object { $_.Name -ne \"node_modules\" } | Select-Object Name, Mode; Write-Host \"---\"; Get-ChildItem -Path \"C:\\\\soundvote\\\\app\" | Select-Object Name; Write-Host \"---\"; Get-ChildItem -Path \"C:\\\\soundvote\\\\lib\" -Recurse | Select-Object Name; Write-Host \"---\"; Get-ChildItem -Path \"C:\\\\soundvote\\\\supabase\" | Select-Object Name)",
+      "PowerShell(cd C:\\\\soundvote; Get-ChildItem -Force | Where-Object { $_.Name -ne \"node_modules\" } | Format-Table Name, Mode -AutoSize)"
+    ]
+  }
+}

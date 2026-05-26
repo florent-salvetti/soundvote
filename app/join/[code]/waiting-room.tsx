@@ -196,7 +196,7 @@ export default function WaitingRoom({
     const totalVotes = results.reduce((sum, r) => sum + r.total, 0)
 
     return (
-      <main className="page-bg relative min-h-screen overflow-hidden px-5 py-12 text-cream">
+      <main className="page-bg relative min-h-screen overflow-hidden px-5 py-10 text-cream">
 
         {/* Confettis (uniquement si un gagnant) */}
         {type !== 'none' && (
@@ -221,9 +221,22 @@ export default function WaitingRoom({
 
         <div className="mx-auto w-full max-w-sm">
 
-          <p className="mb-8 font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
-            Session {code}
-          </p>
+          <div className="mb-8 flex items-center justify-between">
+            <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
+              Session {code}
+            </p>
+            <button
+              onClick={handleShare}
+              aria-label="Partager le lien"
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-gray-dim transition-colors hover:text-cream"
+            >
+              {copied ? 'Copie !' : 'Inviter'}
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M9 1H5a1 1 0 00-1 1v8a1 1 0 001 1h7a1 1 0 001-1V4L9 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 1v3h3M3 4H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
 
           {/* Carte gagnant */}
           <div className={`mb-8 rounded-2xl border px-6 py-6 text-center ${
@@ -406,73 +419,68 @@ export default function WaitingRoom({
   // ── Ecran lobby (attente) ─────────────────────────────────────────────────
 
   return (
-    <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <main className="page-bg min-h-screen px-5 py-10 text-cream">
+      <div className="mx-auto w-full max-w-sm">
 
-      {/* Code avec anneau pulsant */}
-      <div className="relative mb-10 flex items-center justify-center">
-        <div
-          className="absolute rounded-full border border-neon-green/30"
-          style={{ animation: 'pulse-ring 2s ease-out infinite', width: 120, height: 120 }}
-          aria-hidden
-        />
-        <div
-          className="absolute rounded-full border border-neon-green/15"
-          style={{ animation: 'pulse-ring 2s 0.4s ease-out infinite', width: 120, height: 120 }}
-          aria-hidden
-        />
-        <div className="relative">
-          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim mb-2">
-            Session
+        {/* Header */}
+        <div className="mb-12 flex items-center justify-between">
+          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
+            Session {code}
           </p>
-          <p className="font-display text-6xl font-normal tracking-[.15em] text-cream text-glow-green">
-            {code}
+          <button
+            onClick={handleShare}
+            aria-label="Partager le lien"
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-gray-dim transition-colors hover:text-cream"
+          >
+            {copied ? 'Copie !' : 'Inviter'}
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M9 1H5a1 1 0 00-1 1v8a1 1 0 001 1h7a1 1 0 001-1V4L9 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 1v3h3M3 4H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Contenu centré */}
+        <div className="flex flex-col items-center text-center">
+
+          {/* Code avec anneau pulsant */}
+          <div className="relative mb-10 flex items-center justify-center">
+            <div
+              className="absolute rounded-full border border-neon-green/30"
+              style={{ animation: 'pulse-ring 2s ease-out infinite', width: 120, height: 120 }}
+              aria-hidden
+            />
+            <div
+              className="absolute rounded-full border border-neon-green/15"
+              style={{ animation: 'pulse-ring 2s 0.4s ease-out infinite', width: 120, height: 120 }}
+              aria-hidden
+            />
+            <p className="relative font-display text-6xl font-normal tracking-[.15em] text-cream text-glow-green">
+              {code}
+            </p>
+          </div>
+
+          <div className="mb-3 flex items-center gap-2">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-neon-green">
+              En direct
+            </span>
+          </div>
+
+          <h1 className="font-display text-2xl font-normal text-cream">
+            En attente du DJ...
+          </h1>
+          <p className="mt-3 font-sans text-sm text-gray-mid">
+            Le vote va bientot commencer.
           </p>
+
+          {/* QR code */}
+          <div className="mt-10 rounded-2xl bg-white p-3">
+            <QRCode value={joinUrl} size={120} />
+          </div>
+
         </div>
       </div>
-
-      <div className="mb-3 flex items-center gap-2">
-        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
-        <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-neon-green">
-          En direct
-        </span>
-      </div>
-
-      <h1 className="font-display text-2xl font-normal text-cream">
-        En attente du DJ...
-      </h1>
-      <p className="mt-3 font-sans text-sm text-gray-mid">
-        Le vote va bientot commencer.
-      </p>
-
-      {/* QR code + partage */}
-      <div className="mt-10 flex flex-col items-center gap-4">
-        <div className="rounded-2xl bg-white p-3">
-          <QRCode value={joinUrl} size={120} />
-        </div>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-3 font-mono text-[10px] tracking-[0.18em] uppercase text-gray-mid transition-colors hover:border-cream/20 hover:text-cream"
-        >
-          {copied ? (
-            <>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7l3.5 3.5L12 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Lien copie
-            </>
-          ) : (
-            <>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M9 1H5a1 1 0 00-1 1v8a1 1 0 001 1h7a1 1 0 001-1V4L9 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M9 1v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3 4H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Inviter des amis
-            </>
-          )}
-        </button>
-      </div>
-
     </main>
   )
 }

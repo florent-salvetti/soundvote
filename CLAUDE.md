@@ -61,8 +61,9 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - [x] Console DJ avec resultats live (LiveResults : initialCounts serveur + re-fetch au montage + Realtime votes INSERT)
 - [x] Cloture de manche : bouton DJ, bascule Realtime public vers resultats, bandeau gagnant/egalite/zero vote
 - [x] Suppression de session (2 clics, cascade DB, RLS) + racine / redirige vers login/dj
-- [x] Identite visuelle club : palette neon (#c6ff3a / #ff2e9a), Syne+DM Sans, halos page-bg, animations bar-fill
-- [ ] Deploiement Vercel (en attente URL prod pour configurer Supabase Site URL + redirect)
+- [x] Identite visuelle "After Hours" : palette encre/creme/corail, Newsreader+Space Grotesk+JetBrains Mono, halos, confettis CSS, badges A/B/C/D
+- [x] Page /join avec saisie 4 cases (auto-avance, colle, navigation auto)
+- [x] Deploiement Vercel — https://soundvote.vercel.app (Supabase Site URL + redirects configures)
 
 ## Contraintes techniques a respecter
 

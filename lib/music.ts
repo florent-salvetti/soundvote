@@ -50,7 +50,7 @@ export async function getRecommendations(
       track:       trackName,
       api_key:     LASTFM_KEY,
       format:      'json',
-      limit:       '5',
+      limit:       '15',
       autocorrect: '1',
     })
     const res = await fetch(`https://ws.audioscrobbler.com/2.0/?${params}`)
@@ -59,14 +59,19 @@ export async function getRecommendations(
     const similar: { name: string; artist: { name: string } }[] = data.similartracks?.track ?? []
 
     const results: MusicTrack[] = []
+    // Seed artist exclu pour eviter de le retrouver dans les recos
+    const usedArtists = new Set([artistName.toLowerCase()])
+
     for (const t of similar) {
       if (results.length >= 3) break
+      if (usedArtists.has(t.artist.name.toLowerCase())) continue
+
       const tracks = await searchTracks(`${t.name} ${t.artist.name}`)
-      // Prioritise la correspondance exacte sur le titre
       const match =
         tracks.find((tr) => tr.name.toLowerCase() === t.name.toLowerCase()) ?? tracks[0]
-      if (match) results.push(match)
-      else results.push({ id: t.name, name: t.name, artist: t.artist.name, imageUrl: '' })
+      const track = match ?? { id: t.name, name: t.name, artist: t.artist.name, imageUrl: '' }
+      results.push(track)
+      usedArtists.add(t.artist.name.toLowerCase())
     }
     return results
   } catch {

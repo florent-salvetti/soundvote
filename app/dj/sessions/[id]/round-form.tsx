@@ -14,21 +14,57 @@ type TrackSlot = {
 
 type Props = {
   launchRoundAction: (fd: FormData) => Promise<void>
+  usedTrackNames?:   string[]
 }
 
-export default function RoundForm({ launchRoundAction }: Props) {
+export default function RoundForm({ launchRoundAction, usedTrackNames = [] }: Props) {
   const [question,    setQuestion]    = useState('')
   const [slots,       setSlots]       = useState<TrackSlot[]>([null, null, null, null])
+  const [activeSlot,  setActiveSlot]  = useState<number | null>(null)
   const [query,       setQuery]       = useState('')
   const [results,     setResults]     = useState<MusicTrack[]>([])
   const [showDrop,    setShowDrop]    = useState(false)
-  const [loadingRecs, setLoadingRecs] = useState(false)
+  const [loadingSlots, setLoadingSlots] = useState<boolean[]>([false, false, false, false])
+  const [cachedRecs,  setCachedRecs]  = useState<MusicTrack[]>([])
   const [isPending,   startTransition] = useTransition()
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inputRef    = useRef<HTMLInputElement>(null)
 
-  // Debounce search sur le champ A
+  // Recos disponibles = celles qui ne sont pas deja dans un slot ni deja proposees
+  function availableRecs(currentSlots: TrackSlot[], recs: MusicTrack[]): MusicTrack[] {
+    return recs.filter(
+      (r) =>
+        !currentSlots.some((s) => s?.label === r.name) &&
+        !usedTrackNames.includes(r.name.toLowerCase()),
+    )
+  }
+
+  // Auto-focus + pre-charge les recos quand on ouvre un slot B/C/D
   useEffect(() => {
-    if (!query.trim()) { setResults([]); setShowDrop(false); return }
+    if (activeSlot === null) return
+    inputRef.current?.focus()
+    if (activeSlot > 0 && cachedRecs.length > 0) {
+      const avail = availableRecs(slots, cachedRecs)
+      setResults(avail)
+      setShowDrop(avail.length > 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlot])
+
+  // Debounce search — si query vide sur B/C/D, re-affiche les recos
+  useEffect(() => {
+    if (activeSlot === null) return
+    if (!query.trim()) {
+      if (activeSlot > 0 && cachedRecs.length > 0) {
+        const avail = availableRecs(slots, cachedRecs)
+        setResults(avail)
+        setShowDrop(avail.length > 0)
+      } else {
+        setResults([])
+        setShowDrop(false)
+      }
+      return
+    }
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(async () => {
       const tracks = await searchTracks(query)
@@ -36,32 +72,54 @@ export default function RoundForm({ launchRoundAction }: Props) {
       setShowDrop(tracks.length > 0)
     }, 350)
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current) }
-  }, [query])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, activeSlot])
 
   function trackToSlot(t: MusicTrack): TrackSlot {
     return { label: t.name, artist: t.artist, trackId: t.id, imageUrl: t.imageUrl }
   }
 
-  async function handleSelectTrack(track: MusicTrack) {
+  async function handleSelectTrack(track: MusicTrack, idx: number) {
     const next = [...slots]
-    next[0] = trackToSlot(track)
-    next[1] = null; next[2] = null; next[3] = null
+    next[idx] = trackToSlot(track)
     setSlots([...next])
     setQuery('')
     setShowDrop(false)
+    setActiveSlot(null)
 
-    setLoadingRecs(true)
-    const recs = await getRecommendations(track.name, track.artist)
-    recs.slice(0, 3).forEach((rec, i) => { next[i + 1] = trackToSlot(rec) })
-    setSlots([...next])
-    setLoadingRecs(false)
+    // Slot A : vide B/C/D et charge les recos Last.fm
+    if (idx === 0) {
+      next[1] = null; next[2] = null; next[3] = null
+      setSlots([...next])
+      setCachedRecs([])
+      setLoadingSlots([false, true, true, true])
+
+      const recs = await getRecommendations(track.name, track.artist)
+      const filtered = availableRecs(next, recs)
+      setCachedRecs(filtered)
+
+      const afterRecs = [...next]
+      filtered.slice(0, 3).forEach((rec, i) => { afterRecs[i + 1] = trackToSlot(rec) })
+      setSlots(afterRecs)
+      setLoadingSlots([false, false, false, false])
+    }
   }
 
   function clearSlot(idx: number) {
     const next = [...slots]
     next[idx] = null
-    if (idx === 0) { next[1] = null; next[2] = null; next[3] = null }
+    if (idx === 0) {
+      next[1] = null; next[2] = null; next[3] = null
+      setCachedRecs([])
+    }
     setSlots(next)
+  }
+
+  function openSlot(idx: number) {
+    setActiveSlot(idx)
+    setQuery('')
+    setResults([])
+    setShowDrop(false)
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -102,75 +160,78 @@ export default function RoundForm({ launchRoundAction }: Props) {
           Options (2 minimum)
         </p>
 
-        {/* Slot A — recherche */}
-        <div className="relative">
-          <div className="flex items-start gap-3">
-            <BadgeA filled={!!slots[0]} />
-            <div className="flex-1">
-              {slots[0] ? (
-                <TrackCard slot={slots[0]} onClear={() => clearSlot(0)} />
-              ) : (
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => results.length > 0 && setShowDrop(true)}
-                  onBlur={() => setTimeout(() => setShowDrop(false), 150)}
-                  placeholder="Chercher un titre..."
-                  autoComplete="off"
-                  className="h-11 w-full rounded-xl border border-border bg-surface-2 px-3 font-sans text-sm text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-                />
-              )}
-            </div>
-          </div>
-          {showDrop && results.length > 0 && (
-            <div className="absolute left-10 right-0 top-12 z-20 overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
-              {results.map((track) => (
-                <button
-                  key={track.id}
-                  type="button"
-                  onMouseDown={() => handleSelectTrack(track)}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2"
-                >
-                  <TrackThumb track={track} />
-                  <div className="min-w-0">
-                    <p className="truncate font-sans text-sm font-semibold text-cream">{track.name}</p>
-                    <p className="truncate font-mono text-[10px] text-gray-dim">{track.artist}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {OPTION_LETTERS.map((letter, idx) => {
+          const slot       = slots[idx]
+          const isActive   = activeSlot === idx
+          const isLoading  = loadingSlots[idx]
+          const hasRecs    = idx > 0 && cachedRecs.length > 0 && availableRecs(slots, cachedRecs).length > 0
 
-        {/* Slots B/C/D — recommandations Last.fm */}
-        {loadingRecs ? (
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-4">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
-            <span className="font-mono text-[10px] uppercase tracking-widest text-gray-dim">
-              Recommandations...
-            </span>
-          </div>
-        ) : (
-          (['B', 'C', 'D'] as const).map((letter, i) => (
-            <div key={letter} className="flex items-start gap-3">
-              <span className={`mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border font-mono text-xs font-bold ${slots[i + 1] ? 'border-neon-green/30 bg-neon-green/10 text-neon-green' : 'border-border bg-surface-2 text-gray-dim'}`}>
+          return (
+            <div key={letter} className="relative flex items-start gap-3">
+
+              {/* Badge lettre */}
+              <span className={`mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border font-mono text-xs font-bold transition-colors ${slot ? 'border-neon-green/30 bg-neon-green/10 text-neon-green' : isActive ? 'border-neon-green/50 bg-neon-green/10 text-neon-green' : 'border-border bg-surface-2 text-gray-mid'}`}>
                 {letter}
               </span>
+
               <div className="flex-1">
-                {slots[i + 1] ? (
-                  <TrackCard slot={slots[i + 1]!} onClear={() => clearSlot(i + 1)} />
-                ) : (
-                  <div className="flex h-11 items-center rounded-xl border border-border bg-surface-2 px-3">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-gray-dim">
-                      {slots[0] ? 'Aucune reco trouvee' : 'Choisir A en premier'}
+                {isLoading ? (
+                  /* Chargement reco */
+                  <div className="flex h-11 items-center gap-2 rounded-xl border border-border bg-surface-2 px-3">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-gray-dim">
+                      Recommandation...
                     </span>
                   </div>
+                ) : slot ? (
+                  <TrackCard slot={slot} onClear={() => clearSlot(idx)} />
+                ) : isActive ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => results.length > 0 && setShowDrop(true)}
+                    onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+                    placeholder="Chercher un titre..."
+                    autoComplete="off"
+                    className="h-11 w-full rounded-xl border border-neon-green/40 bg-surface-2 px-3 font-sans text-sm text-cream placeholder-gray-dim outline-none ring-1 ring-neon-green/20"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openSlot(idx)}
+                    className="flex h-11 w-full items-center rounded-xl border border-border bg-surface-2 px-3 text-left transition-colors hover:border-neon-green/30 hover:bg-surface"
+                  >
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-gray-dim">
+                      {hasRecs ? 'Recos dispo — cliquer pour choisir' : 'Chercher un titre...'}
+                    </span>
+                  </button>
                 )}
               </div>
+
+              {/* Dropdown */}
+              {isActive && showDrop && results.length > 0 && (
+                <div className="absolute left-10 right-0 top-12 z-20 overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
+                  {results.map((track) => (
+                    <button
+                      key={track.id}
+                      type="button"
+                      onMouseDown={() => handleSelectTrack(track, idx)}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2"
+                    >
+                      <TrackThumb track={track} />
+                      <div className="min-w-0">
+                        <p className="truncate font-sans text-sm font-semibold text-cream">{track.name}</p>
+                        <p className="truncate font-mono text-[10px] text-gray-dim">{track.artist}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          ))
-        )}
+          )
+        })}
       </div>
 
       {/* Submit */}
@@ -191,14 +252,6 @@ export default function RoundForm({ launchRoundAction }: Props) {
 }
 
 // ── Sous-composants ────────────────────────────────────────────────────────────
-
-function BadgeA({ filled }: { filled: boolean }) {
-  return (
-    <span className={`mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border font-mono text-xs font-bold ${filled ? 'border-neon-green/30 bg-neon-green/10 text-neon-green' : 'border-border bg-surface-2 text-gray-mid'}`}>
-      A
-    </span>
-  )
-}
 
 function TrackThumb({ track }: { track: MusicTrack }) {
   if (!track.imageUrl) return <div className="h-9 w-9 shrink-0 rounded-md bg-surface-2" />

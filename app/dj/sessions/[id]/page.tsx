@@ -71,6 +71,7 @@ export default async function SessionPage({
 
   type ClosedRound = { id: string; question: string; results: ResultRow[] }
   let closedRounds: ClosedRound[] = []
+  let usedTrackNames: string[] = []
   if (!activeRound) {
     const { data: closedData } = await supabase
       .from('rounds')
@@ -85,6 +86,12 @@ export default async function SessionPage({
           return { ...r, results: (data as ResultRow[]) ?? [] }
         })
       )
+      // Collecte les titres deja proposes pour filtrer les recos
+      const { data: usedOpts } = await supabase
+        .from('options')
+        .select('label')
+        .in('round_id', closedData.map((r) => r.id))
+      if (usedOpts) usedTrackNames = usedOpts.map((o) => (o.label as string).toLowerCase())
     }
   }
 
@@ -201,6 +208,7 @@ export default async function SessionPage({
             {/* Formulaire nouvelle manche */}
             <RoundForm
               launchRoundAction={launchRoundAction}
+              usedTrackNames={usedTrackNames}
             />
           </div>
         )}

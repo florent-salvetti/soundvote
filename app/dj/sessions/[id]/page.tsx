@@ -201,7 +201,6 @@ export default async function SessionPage({
             {/* Formulaire nouvelle manche */}
             <RoundForm
               launchRoundAction={launchRoundAction}
-              returnPath={`/dj/sessions/${id}`}
             />
           </div>
         )}

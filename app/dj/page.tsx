@@ -10,10 +10,20 @@ export default async function DjPage() {
 
   if (!user) redirect('/login')
 
+  // Ferme les sessions sans activite depuis plus de 30 min
+  const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+  await supabase
+    .from('sessions')
+    .update({ status: 'closed' })
+    .eq('dj_id', user.id)
+    .eq('status', 'open')
+    .lt('last_activity_at', cutoff)
+
   const { data: sessions } = await supabase
     .from('sessions')
     .select('id, code, status, created_at')
     .eq('dj_id', user.id)
+    .eq('status', 'open')
     .order('created_at', { ascending: false })
 
   return (
@@ -65,13 +75,9 @@ export default async function DjPage() {
                   <span className="font-display text-xl font-extrabold tracking-widest text-white">
                     {s.code}
                   </span>
-                  <span className={`flex items-center gap-1.5 text-xs font-medium ${
-                    s.status === 'open' ? 'text-neon-green' : 'text-gray-dim'
-                  }`}>
-                    {s.status === 'open' && (
-                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
-                    )}
-                    {s.status === 'open' ? 'En cours' : 'Terminee'}
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-neon-green">
+                    <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
+                    En cours
                   </span>
                 </a>
                 <DeleteSessionButton sessionId={s.id} />

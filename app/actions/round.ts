@@ -55,6 +55,12 @@ export async function launchRound(sessionId: string, formData: FormData) {
     throw new Error(`Erreur lancement vote : ${updateError.message}`)
   }
 
+  // 4. Mise a jour de l'activite DJ pour reinitiialiser le timer d'inactivite
+  await supabase
+    .from('sessions')
+    .update({ last_activity_at: new Date().toISOString() })
+    .eq('id', sessionId)
+
   revalidatePath(`/dj/sessions/${sessionId}`)
   redirect(`/dj/sessions/${sessionId}`)
 }
@@ -71,6 +77,12 @@ export async function closeRound(sessionId: string, roundId: string, _formData: 
     .eq('id', roundId)
 
   if (error) throw new Error(`Erreur cloture : ${error.message}`)
+
+  // Mise a jour de l'activite DJ
+  await supabase
+    .from('sessions')
+    .update({ last_activity_at: new Date().toISOString() })
+    .eq('id', sessionId)
 
   revalidatePath(`/dj/sessions/${sessionId}`)
   redirect(`/dj/sessions/${sessionId}`)

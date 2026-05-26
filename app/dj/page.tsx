@@ -43,6 +43,14 @@ export default async function DjPage() {
     .eq('status', 'open')
     .order('created_at', { ascending: false })
 
+  // Sessions fermees (pour permettre la suppression)
+  const { data: closedSessions } = await supabase
+    .from('sessions')
+    .select('id, code, created_at')
+    .eq('dj_id', user.id)
+    .eq('status', 'closed')
+    .order('created_at', { ascending: false })
+
   return (
     <main className="page-bg min-h-screen px-5 py-10 text-cream">
       <div className="mx-auto w-full max-w-md">
@@ -146,6 +154,26 @@ export default async function DjPage() {
           <p className="mt-4 text-center font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
             Aucune session active
           </p>
+        )}
+
+        {/* Sessions fermees */}
+        {closedSessions && closedSessions.length > 0 && (
+          <div className="mt-6 flex flex-col gap-2">
+            <p className="mb-1 font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
+              Sessions terminees
+            </p>
+            {closedSessions.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center gap-3 rounded-xl border border-border bg-surface px-5 py-4 opacity-50"
+              >
+                <span className="flex min-w-0 flex-1 font-display text-xl font-normal tracking-[.15em] text-cream">
+                  {s.code}
+                </span>
+                <DeleteSessionButton sessionId={s.id} />
+              </div>
+            ))}
+          </div>
         )}
 
       </div>

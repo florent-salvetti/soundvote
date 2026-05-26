@@ -30,6 +30,7 @@ export default function WaitingRoom({
   const [voterId, setVoterId] = useState<string | null>(null)
   const [votedOptionId, setVotedOptionId] = useState<string | null>(null)
   const [isVoting, setIsVoting] = useState(false)
+  const [voteError, setVoteError] = useState<string | null>(null)
   const [results, setResults] = useState<ResultRow[] | null>(null)
 
   // Voter identity — lecture/creation dans localStorage
@@ -103,22 +104,30 @@ export default function WaitingRoom({
   async function handleVote(optionId: string) {
     if (!voterId || votedOptionId || isVoting || !round) return
     setIsVoting(true)
+    setVoteError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.from('votes').insert({
-      round_id: round.id,
-      option_id: optionId,
-      voter_anon_id: voterId,
-    })
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('votes').insert({
+        round_id: round.id,
+        option_id: optionId,
+        voter_anon_id: voterId,
+      })
 
-    // 23505 = unique_violation : garde-fou final si localStorage a ete efface.
-    // Dans ce cas on affiche quand meme le feedback sur l'option tapee.
-    if (!error || error.code === '23505') {
-      setVotedOptionId(optionId)
-      localStorage.setItem(`soundvote_vote_${round.id}`, optionId)
+      // 23505 = unique_violation : garde-fou final si localStorage a ete efface.
+      if (!error || error.code === '23505') {
+        setVotedOptionId(optionId)
+        localStorage.setItem(`soundvote_vote_${round.id}`, optionId)
+      } else {
+        console.error('Vote error:', error)
+        setVoteError(`Erreur : ${error.message} (${error.code})`)
+      }
+    } catch (err) {
+      console.error('Vote exception:', err)
+      setVoteError('Impossible de voter. Verifie ta connexion.')
+    } finally {
+      setIsVoting(false)
     }
-
-    setIsVoting(false)
   }
 
   // ── Ecran resultats (round clos) ──────────────────────────────────────────
@@ -234,6 +243,12 @@ export default function WaitingRoom({
           <h1 className="mb-8 font-display text-2xl font-extrabold leading-tight text-white">
             {round.question}
           </h1>
+
+          {voteError && (
+            <p className="mb-4 rounded-xl border border-neon-magenta/20 bg-neon-magenta/10 px-4 py-3 text-sm text-neon-magenta">
+              {voteError}
+            </p>
+          )}
 
           <div className="flex flex-col gap-4">
             {round.options.map((o) => {

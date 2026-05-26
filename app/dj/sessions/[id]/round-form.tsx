@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useTransition } from 'react'
 import { searchTracks, getRecommendations, type MusicTrack } from '@/lib/music'
 
-const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
+const OPTION_LETTERS    = ['A', 'B', 'C', 'D'] as const
+const DEFAULT_QUESTION  = 'Quelle sera la prochaine chanson ?'
 
 type TrackSlot = {
   label:    string
@@ -18,7 +19,9 @@ type Props = {
 }
 
 export default function RoundForm({ launchRoundAction, usedTrackNames = [] }: Props) {
-  const [question,    setQuestion]    = useState('')
+  const [question,       setQuestion]       = useState(DEFAULT_QUESTION)
+  const [editingQuestion, setEditingQuestion] = useState(false)
+  const questionInputRef = useRef<HTMLInputElement>(null)
   const [slots,       setSlots]       = useState<TrackSlot[]>([null, null, null, null])
   const [activeSlot,  setActiveSlot]  = useState<number | null>(null)
   const [query,       setQuery]       = useState('')
@@ -28,7 +31,7 @@ export default function RoundForm({ launchRoundAction, usedTrackNames = [] }: Pr
   const [cachedRecs,  setCachedRecs]  = useState<MusicTrack[]>([])
   const [isPending,   startTransition] = useTransition()
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const inputRef    = useRef<HTMLInputElement>(null)
+  const inputRef         = useRef<HTMLInputElement>(null)
 
   // Recos disponibles = celles qui ne sont pas deja dans un slot ni deja proposees
   function availableRecs(currentSlots: TrackSlot[], recs: MusicTrack[]): MusicTrack[] {
@@ -141,17 +144,48 @@ export default function RoundForm({ launchRoundAction, usedTrackNames = [] }: Pr
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
       {/* Question */}
-      <div className="flex flex-col gap-1.5">
-        <label className="font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
-          Question
-        </label>
-        <input
-          name="question"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Quelle sera la prochaine chanson ?"
-          className="h-12 rounded-xl border border-border bg-surface-2 px-4 font-sans text-sm text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-        />
+      <div>
+        {editingQuestion ? (
+          <input
+            ref={questionInputRef}
+            name="question"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onBlur={() => {
+              if (!question.trim()) setQuestion(DEFAULT_QUESTION)
+              setEditingQuestion(false)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === 'Escape') {
+                if (!question.trim()) setQuestion(DEFAULT_QUESTION)
+                setEditingQuestion(false)
+              }
+            }}
+            autoFocus
+            className="h-12 w-full rounded-xl border border-neon-green/40 bg-surface-2 px-4 font-sans text-sm text-cream outline-none ring-1 ring-neon-green/20"
+          />
+        ) : (
+          <>
+            {/* input caché pour que le FormData contienne la valeur */}
+            <input type="hidden" name="question" value={question} />
+            <button
+              type="button"
+              onClick={() => setEditingQuestion(true)}
+              className="group flex w-full items-center justify-between rounded-xl border border-border bg-surface-2 px-4 py-3.5 text-left transition-colors hover:border-neon-green/30"
+            >
+              <span className="font-sans text-sm text-cream">{question}</span>
+              <svg
+                width="15" height="15" viewBox="0 0 15 15" fill="none"
+                className="shrink-0 text-gray-dim transition-colors group-hover:text-neon-green"
+              >
+                <path
+                  d="M6.07 1.33a1 1 0 0 1 1.86 0l.32.9a5.5 5.5 0 0 1 1.06.61l.94-.2a1 1 0 0 1 1.08.57l.43.87a1 1 0 0 1-.28 1.22l-.73.56c.02.2.02.4 0 .6l.73.56a1 1 0 0 1 .28 1.22l-.43.87a1 1 0 0 1-1.08.57l-.94-.2a5.5 5.5 0 0 1-1.06.61l-.32.9a1 1 0 0 1-1.86 0l-.32-.9a5.5 5.5 0 0 1-1.06-.61l-.94.2a1 1 0 0 1-1.08-.57l-.43-.87a1 1 0 0 1 .28-1.22l.73-.56a5.5 5.5 0 0 1 0-.6l-.73-.56a1 1 0 0 1-.28-1.22l.43-.87a1 1 0 0 1 1.08-.57l.94.2a5.5 5.5 0 0 1 1.06-.61l.32-.9ZM7.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Options */}

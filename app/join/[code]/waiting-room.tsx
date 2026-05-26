@@ -122,6 +122,10 @@ export default function WaitingRoom({
             setRound({ ...updated, options: (opts as Option[]) ?? [] })
             setVotedOptionId(null)
             setVoteError(null)
+            // Vibration au lancement du vote (Android uniquement, iOS ne supporte pas l'API)
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              navigator.vibrate([80, 40, 80])
+            }
           } else if (updated.status === 'closed') {
             setRound((prev) => prev ? { ...prev, status: 'closed' } : null)
           }

@@ -31,7 +31,9 @@
       "Bash(gh api *)",
       "Bash(xargs -I{} sh -c 'gh api repos/florent-salvetti/soundvote/commits/{} --jq \".files[].filename\" 2>/dev/null')",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(curl *)",
+      "mcp__chrome-devtools__emulate"
     ]
   }
 }

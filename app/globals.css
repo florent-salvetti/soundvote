@@ -99,3 +99,13 @@ body {
   color: #e0e0e0;
   font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
+
+/* Supprime le delai 300ms sur mobile et evite que les taps soient
+   avales par le scroll ou le double-tap-to-zoom. */
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  touch-action: manipulation;
+}

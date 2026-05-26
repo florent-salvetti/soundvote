@@ -60,7 +60,9 @@ Tiens cette section a jour a chaque session : ce qui est fait, ce qui reste, les
 - [x] Vote public avec feedback immediat + anti double-vote via localStorage (cle soundvote_vote_${roundId})
 - [x] Console DJ avec resultats live (LiveResults : initialCounts serveur + re-fetch au montage + Realtime votes INSERT)
 - [x] Cloture de manche : bouton DJ, bascule Realtime public vers resultats, bandeau gagnant/egalite/zero vote
-- [ ] Deploiement Vercel
+- [x] Suppression de session (2 clics, cascade DB, RLS) + racine / redirige vers login/dj
+- [x] Identite visuelle club : palette neon (#c6ff3a / #ff2e9a), Syne+DM Sans, halos page-bg, animations bar-fill
+- [ ] Deploiement Vercel (en attente URL prod pour configurer Supabase Site URL + redirect)
 
 ## Contraintes techniques a respecter
 

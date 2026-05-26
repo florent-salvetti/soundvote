@@ -12,12 +12,21 @@ export async function launchRound(sessionId: string, formData: FormData) {
   const question = (formData.get('question') as string)?.trim() || 'Quelle sera la prochaine chanson ?'
 
   // Collecte les options non vides dans l'ordre du formulaire
-  const options: { label: string; artist: string | null; position: number }[] = []
+  const options: {
+    label: string
+    artist: string | null
+    position: number
+    spotify_track_id:  string | null
+    spotify_image_url: string | null
+  }[] = []
+
   for (let i = 1; i <= 4; i++) {
     const label = (formData.get(`option_label_${i}`) as string)?.trim()
     if (label) {
-      const artist = (formData.get(`option_artist_${i}`) as string)?.trim() || null
-      options.push({ label, artist, position: options.length })
+      const artist            = (formData.get(`option_artist_${i}`)       as string)?.trim() || null
+      const spotify_track_id  = (formData.get(`spotify_track_id_${i}`)    as string)?.trim() || null
+      const spotify_image_url = (formData.get(`spotify_image_url_${i}`)   as string)?.trim() || null
+      options.push({ label, artist, position: options.length, spotify_track_id, spotify_image_url })
     }
   }
 

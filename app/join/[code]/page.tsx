@@ -3,7 +3,7 @@ import WaitingRoom from './waiting-room'
 
 export const dynamic = 'force-dynamic'
 
-type Option = { id: string; label: string; artist: string | null; position: number }
+type Option = { id: string; label: string; artist: string | null; position: number; spotify_image_url: string | null }
 type ActiveRound = { id: string; question: string; status: string; options: Option[] }
 
 export default async function JoinPage({
@@ -53,7 +53,7 @@ export default async function JoinPage({
   if (roundData) {
     const { data: opts } = await supabase
       .from('options')
-      .select('id, label, artist, position')
+      .select('id, label, artist, position, spotify_image_url')
       .eq('round_id', roundData.id)
       .order('position')
     initialRound = { ...roundData, options: (opts as Option[]) ?? [] }

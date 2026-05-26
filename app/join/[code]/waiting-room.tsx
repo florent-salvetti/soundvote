@@ -16,7 +16,7 @@ function generateVoterId(): string {
   })
 }
 
-type Option = { id: string; label: string; artist: string | null; position: number }
+type Option = { id: string; label: string; artist: string | null; position: number; spotify_image_url: string | null }
 type Round  = { id: string; question: string; status: string; options: Option[] }
 
 // Confettis purement CSS — pas de lib externe
@@ -115,7 +115,7 @@ export default function WaitingRoom({
           if (updated.status === 'voting') {
             const { data: opts } = await supabase
               .from('options')
-              .select('id, label, artist, position')
+              .select('id, label, artist, position, spotify_image_url')
               .eq('round_id', updated.id)
               .order('position')
 
@@ -358,6 +358,10 @@ export default function WaitingRoom({
                   }`}>
                     {OPTION_LETTERS[idx] ?? idx + 1}
                   </span>
+                  {o.spotify_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={o.spotify_image_url} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className={`font-sans font-semibold ${isVoted ? 'text-neon-green' : 'text-cream'}`}>
                       {o.label}

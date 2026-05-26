@@ -6,13 +6,14 @@ import { launchRound, closeRound } from '@/app/actions/round'
 import LiveResults from './live-results'
 import SessionQR from './session-qr'
 import RoundHistory from './round-history'
+import RoundForm from './round-form'
 import { type ResultRow } from '@/lib/round-results'
 
 export const dynamic = 'force-dynamic'
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
 
-type Option = { id: string; label: string; artist: string | null; position: number }
+type Option = { id: string; label: string; artist: string | null; position: number; spotify_image_url: string | null }
 type Round  = { id: string; question: string; status: string }
 
 export default async function SessionPage({
@@ -52,7 +53,7 @@ export default async function SessionPage({
   if (activeRound) {
     const { data: opts } = await supabase
       .from('options')
-      .select('id, label, artist, position')
+      .select('id, label, artist, position, spotify_image_url')
       .eq('round_id', activeRound.id)
       .order('position')
     roundOptions = (opts as Option[]) ?? []
@@ -161,6 +162,10 @@ export default async function SessionPage({
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 font-mono text-xs font-bold text-gray-mid">
                     {OPTION_LETTERS[idx] ?? idx + 1}
                   </span>
+                  {o.spotify_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={o.spotify_image_url} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-md object-cover" />
+                  )}
                   <div className="min-w-0">
                     <p className="font-sans font-semibold text-cream">{o.label}</p>
                     {o.artist && (
@@ -194,55 +199,10 @@ export default async function SessionPage({
             <RoundHistory rounds={closedRounds} />
 
             {/* Formulaire nouvelle manche */}
-            <form action={launchRoundAction} className="flex flex-col gap-5">
-
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
-                  Question
-                </label>
-                <input
-                  name="question"
-                  placeholder="Quelle sera la prochaine chanson ?"
-                  className="h-12 rounded-xl border border-border bg-surface-2 px-4 font-sans text-sm text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2.5">
-                <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
-                  Options (2 minimum)
-                </p>
-                {OPTION_LETTERS.map((letter, i) => (
-                  <div key={letter} className="flex items-start gap-3">
-                    <span className="mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 font-mono text-xs font-bold text-gray-mid">
-                      {letter}
-                    </span>
-                    <div className="flex flex-1 flex-col gap-1.5">
-                      <input
-                        name={`option_label_${i + 1}`}
-                        required={i < 2}
-                        placeholder={i < 2 ? 'Titre' : 'Titre (optionnel)'}
-                        className="h-11 rounded-xl border border-border bg-surface-2 px-3 font-sans text-sm text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-                      />
-                      <input
-                        name={`option_artist_${i + 1}`}
-                        placeholder="Artiste (optionnel)"
-                        className="h-9 rounded-xl border border-border bg-surface-2 px-3 font-mono text-[11px] text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="submit"
-                className="flex h-14 items-center justify-center gap-2.5 rounded-xl bg-neon-green font-sans text-base font-semibold text-bg shadow-lg shadow-neon-green/20 transition-all hover:brightness-110"
-              >
-                Lancer le vote
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M4 9h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </form>
+            <RoundForm
+              launchRoundAction={launchRoundAction}
+              returnPath={`/dj/sessions/${id}`}
+            />
           </div>
         )}
 

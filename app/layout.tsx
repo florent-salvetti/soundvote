@@ -1,22 +1,24 @@
 import type { Metadata, Viewport } from "next"
-import { Syne, DM_Sans, Geist_Mono } from "next/font/google"
+import { Newsreader, Space_Grotesk, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-})
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 })
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 })
 
 export const metadata: Metadata = {
@@ -37,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${syne.variable} ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

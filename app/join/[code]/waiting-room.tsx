@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { computeWinner, type ResultRow } from '@/lib/round-results'
 
 const VOTER_ID_KEY = 'soundvote_voter_id'
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
 
 function generateVoterId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -16,6 +17,17 @@ function generateVoterId(): string {
 
 type Option = { id: string; label: string; artist: string | null; position: number }
 type Round  = { id: string; question: string; status: string; options: Option[] }
+
+// Confettis purement CSS — pas de lib externe
+const CONFETTI_ITEMS = [
+  { color: '#ff4d5e', left: '8%',  delay: '0s',    size: 10 },
+  { color: '#d4ff3a', left: '18%', delay: '0.15s',  size: 7  },
+  { color: '#f3ecdc', left: '32%', delay: '0.05s',  size: 9  },
+  { color: '#ff4d5e', left: '50%', delay: '0.25s',  size: 8  },
+  { color: '#d4ff3a', left: '65%', delay: '0.1s',   size: 11 },
+  { color: '#f3ecdc', left: '78%', delay: '0.2s',   size: 7  },
+  { color: '#ff4d5e', left: '90%', delay: '0.05s',  size: 9  },
+] as const
 
 export default function WaitingRoom({
   code,
@@ -33,7 +45,7 @@ export default function WaitingRoom({
   const [voteError, setVoteError] = useState<string | null>(null)
   const [results, setResults] = useState<ResultRow[] | null>(null)
 
-  // Voter identity — lecture/creation dans localStorage
+  // Voter identity
   useEffect(() => {
     let id = localStorage.getItem(VOTER_ID_KEY)
     if (!id) {
@@ -43,7 +55,7 @@ export default function WaitingRoom({
     setVoterId(id)
   }, [])
 
-  // Controle anti double-vote : si on a deja vote sur ce round (via localStorage), restaurer l'etat
+  // Anti double-vote : restaurer l'etat depuis localStorage
   useEffect(() => {
     if (round?.status === 'voting' && round.id) {
       const prev = localStorage.getItem(`soundvote_vote_${round.id}`)
@@ -51,7 +63,7 @@ export default function WaitingRoom({
     }
   }, [round?.id, round?.status])
 
-  // Resultats via get_round_results (seule voie autorisee pour le public, uniquement sur round closed)
+  // Resultats (uniquement via get_round_results, acces public autorise uniquement sur round closed)
   useEffect(() => {
     if (round?.status !== 'closed' || !round.id) return
 
@@ -63,8 +75,7 @@ export default function WaitingRoom({
       })
   }, [round?.id, round?.status])
 
-  // Abonnement aux changements sur rounds pour cette session uniquement.
-  // JAMAIS sur la table votes : cf. contrainte securite CLAUDE.md.
+  // Abonnement rounds uniquement. JAMAIS votes (cf. CLAUDE.md contrainte securite).
   useEffect(() => {
     const supabase = createClient()
 
@@ -89,6 +100,8 @@ export default function WaitingRoom({
               .order('position')
 
             setRound({ ...updated, options: (opts as Option[]) ?? [] })
+            setVotedOptionId(null)
+            setVoteError(null)
           } else if (updated.status === 'closed') {
             setRound((prev) => prev ? { ...prev, status: 'closed' } : null)
           }
@@ -114,7 +127,7 @@ export default function WaitingRoom({
         voter_anon_id: voterId,
       })
 
-      // 23505 = unique_violation : garde-fou final si localStorage a ete efface.
+      // 23505 = unique_violation : garde-fou si localStorage efface
       if (!error || error.code === '23505') {
         setVotedOptionId(optionId)
         localStorage.setItem(`soundvote_vote_${round.id}`, optionId)
@@ -130,14 +143,16 @@ export default function WaitingRoom({
     }
   }
 
-  // ── Ecran resultats (round clos) ──────────────────────────────────────────
+  // ── Ecran resultats ───────────────────────────────────────────────────────
 
   if (round?.status === 'closed') {
     if (!results) {
       return (
         <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green mb-4" />
-          <p className="text-sm text-gray-mid">Calcul des resultats...</p>
+          <span className="mb-4 inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green" />
+          <p className="font-mono text-xs tracking-widest uppercase text-gray-mid">
+            Calcul des resultats...
+          </p>
         </main>
       )
     }
@@ -146,37 +161,67 @@ export default function WaitingRoom({
     const totalVotes = results.reduce((sum, r) => sum + r.total, 0)
 
     return (
-      <main className="page-bg min-h-screen px-4 py-12 text-white">
+      <main className="page-bg relative min-h-screen overflow-hidden px-5 py-12 text-cream">
+
+        {/* Confettis (uniquement si un gagnant) */}
+        {type !== 'none' && (
+          <div className="pointer-events-none absolute inset-x-0 top-0" aria-hidden>
+            {CONFETTI_ITEMS.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: item.left,
+                  top: '-2vh',
+                  width: item.size,
+                  height: item.size,
+                  borderRadius: '2px',
+                  backgroundColor: item.color,
+                  animation: `confetti-fall 2.8s ${item.delay} ease-in both`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         <div className="mx-auto w-full max-w-sm">
 
-          <p className="mb-8 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+          <p className="mb-8 font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
             Session {code}
           </p>
 
-          {/* Bandeau gagnant */}
-          <div className="mb-8 rounded-2xl border border-border bg-surface px-6 py-6 text-center">
+          {/* Carte gagnant */}
+          <div className={`mb-8 rounded-2xl border px-6 py-6 text-center ${
+            type === 'single'
+              ? 'border-neon-green/30 bg-neon-green/5'
+              : type === 'tie'
+              ? 'border-neon-magenta/30 bg-neon-magenta/5'
+              : 'border-border bg-surface'
+          }`}>
             {type === 'none' && (
-              <p className="text-sm text-gray-mid">Aucun vote sur cette manche.</p>
+              <p className="font-mono text-xs uppercase tracking-widest text-gray-dim">
+                Aucun vote sur cette manche.
+              </p>
             )}
             {type === 'single' && (
               <>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neon-green">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-neon-green">
                   Gagnant
                 </p>
-                <p className="font-display text-3xl font-extrabold leading-tight text-neon-green text-glow-green">
+                <p className="font-display text-3xl font-normal leading-tight text-neon-green text-glow-green">
                   {winners[0].label}
                 </p>
                 {winners[0].artist && (
-                  <p className="mt-1 text-sm text-gray-mid">{winners[0].artist}</p>
+                  <p className="mt-1 font-mono text-xs text-gray-mid">{winners[0].artist}</p>
                 )}
               </>
             )}
             {type === 'tie' && (
               <>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-neon-magenta">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-neon-magenta">
                   Egalite
                 </p>
-                <p className="font-display text-2xl font-extrabold text-neon-magenta">
+                <p className="font-display text-2xl font-normal text-neon-magenta">
                   {winners.map((w) => w.label).join(' / ')}
                 </p>
               </>
@@ -184,30 +229,33 @@ export default function WaitingRoom({
           </div>
 
           {/* Barres de resultats */}
-          <div className="flex flex-col gap-4">
-            {results.map((r) => {
+          <div className="flex flex-col gap-3">
+            {results.map((r, idx) => {
               const pct = totalVotes > 0 ? Math.round((r.total / totalVotes) * 100) : 0
               const isWinner = type !== 'none' && winners.some((w) => w.option_id === r.option_id)
 
               return (
                 <div
                   key={r.option_id}
-                  className={`rounded-2xl border px-5 py-4 transition-colors ${
-                    isWinner
-                      ? 'border-neon-green/30 bg-neon-green/5'
-                      : 'border-border bg-surface'
+                  className={`rounded-2xl border px-5 py-4 ${
+                    isWinner ? 'border-neon-green/30 bg-neon-green/5' : 'border-border bg-surface'
                   }`}
                 >
-                  <div className="mb-3 flex items-baseline justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className={`font-display font-bold ${isWinner ? 'text-neon-green' : 'text-gray-hi'}`}>
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold ${
+                      isWinner ? 'bg-neon-green text-bg' : 'bg-surface-2 text-gray-mid'
+                    }`}>
+                      {OPTION_LETTERS[idx] ?? idx + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-sans font-semibold ${isWinner ? 'text-neon-green' : 'text-cream'}`}>
                         {r.label}
                       </p>
                       {r.artist && (
-                        <p className="mt-0.5 text-xs text-gray-mid">{r.artist}</p>
+                        <p className="mt-0.5 font-mono text-[10px] text-gray-dim">{r.artist}</p>
                       )}
                     </div>
-                    <span className={`shrink-0 font-display text-sm tabular-nums font-bold ${
+                    <span className={`shrink-0 font-mono text-sm tabular-nums font-bold ${
                       isWinner ? 'text-neon-green' : 'text-gray-mid'
                     }`}>
                       {pct}%
@@ -215,7 +263,7 @@ export default function WaitingRoom({
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
                     <div
-                      className={`bar-fill h-full rounded-full ${isWinner ? 'bg-neon-green' : 'bg-gray-dim'}`}
+                      className={`bar-fill h-full rounded-full ${isWinner ? 'bg-neon-green' : 'bg-gray-dim/50'}`}
                       style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
                     />
                   </div>
@@ -229,29 +277,29 @@ export default function WaitingRoom({
     )
   }
 
-  // ── Ecran vote (round en cours) ──────────────────────────────────────────
+  // ── Ecran vote ────────────────────────────────────────────────────────────
 
   if (round?.status === 'voting') {
     return (
-      <main className="page-bg min-h-screen px-4 py-10 text-white">
+      <main className="page-bg min-h-screen px-5 py-10 text-cream">
         <div className="mx-auto w-full max-w-sm">
 
-          <p className="mb-6 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+          <p className="mb-6 font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
             Session {code}
           </p>
 
-          <h1 className="mb-8 font-display text-2xl font-extrabold leading-tight text-white">
+          <h1 className="mb-8 font-display text-2xl font-normal leading-tight text-cream">
             {round.question}
           </h1>
 
           {voteError && (
-            <p className="mb-4 rounded-xl border border-neon-magenta/20 bg-neon-magenta/10 px-4 py-3 text-sm text-neon-magenta">
+            <p className="mb-4 rounded-xl border border-neon-magenta/20 bg-neon-magenta/10 px-4 py-3 font-sans text-sm text-neon-magenta">
               {voteError}
             </p>
           )}
 
-          <div className="flex flex-col gap-4">
-            {round.options.map((o) => {
+          <div className="flex flex-col gap-3">
+            {round.options.map((o, idx) => {
               const isVoted = votedOptionId === o.id
               const isOther = votedOptionId !== null && !isVoted
 
@@ -261,7 +309,7 @@ export default function WaitingRoom({
                   onClick={() => handleVote(o.id)}
                   disabled={!!votedOptionId || isVoting}
                   className={[
-                    'w-full rounded-2xl border px-6 py-6 text-left transition-all duration-200',
+                    'flex w-full items-center gap-4 rounded-2xl border px-5 py-5 text-left transition-all duration-200',
                     'active:scale-[0.98] disabled:cursor-default',
                     isVoted
                       ? 'border-neon-green bg-neon-green/10 glow-green'
@@ -270,18 +318,28 @@ export default function WaitingRoom({
                       : 'border-border bg-surface hover:border-neon-green/30 hover:bg-surface-2',
                   ].join(' ')}
                 >
-                  <p className={`font-display text-xl font-bold ${isVoted ? 'text-neon-green' : 'text-white'}`}>
-                    {o.label}
-                  </p>
-                  {o.artist && (
-                    <p className={`mt-1 text-sm ${isVoted ? 'text-neon-green/70' : 'text-gray-mid'}`}>
-                      {o.artist}
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-mono text-sm font-bold transition-colors ${
+                    isVoted
+                      ? 'bg-neon-green text-bg'
+                      : 'bg-surface-2 text-gray-mid'
+                  }`}>
+                    {OPTION_LETTERS[idx] ?? idx + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-sans font-semibold ${isVoted ? 'text-neon-green' : 'text-cream'}`}>
+                      {o.label}
                     </p>
-                  )}
+                    {o.artist && (
+                      <p className={`mt-0.5 font-mono text-[10px] ${isVoted ? 'text-neon-green/70' : 'text-gray-dim'}`}>
+                        {o.artist}
+                      </p>
+                    )}
+                  </div>
                   {isVoted && (
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-neon-green">
-                      Vote enregistre ✓
-                    </p>
+                    <svg className="shrink-0 text-neon-green" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   )}
                 </button>
               )
@@ -293,31 +351,46 @@ export default function WaitingRoom({
     )
   }
 
-  // ── Ecran attente (pas encore de vote lance) ──────────────────────────────
+  // ── Ecran lobby (attente) ─────────────────────────────────────────────────
 
   return (
     <main className="page-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
 
-      <div className="mb-10">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-mid">
-          Session
-        </p>
-        <p className="font-display text-7xl font-extrabold tracking-[.15em] text-white text-glow-green">
-          {code}
-        </p>
+      {/* Code avec anneau pulsant */}
+      <div className="relative mb-10 flex items-center justify-center">
+        <div
+          className="absolute rounded-full border border-neon-green/30"
+          style={{ animation: 'pulse-ring 2s ease-out infinite', width: 120, height: 120 }}
+          aria-hidden
+        />
+        <div
+          className="absolute rounded-full border border-neon-green/15"
+          style={{ animation: 'pulse-ring 2s 0.4s ease-out infinite', width: 120, height: 120 }}
+          aria-hidden
+        />
+        <div className="relative">
+          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim mb-2">
+            Session
+          </p>
+          <p className="font-display text-6xl font-normal tracking-[.15em] text-cream text-glow-green">
+            {code}
+          </p>
+        </div>
       </div>
 
-      <div className="mb-4 flex items-center gap-2">
-        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green" />
-        <span className="text-xs font-semibold uppercase tracking-widest text-neon-green">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
+        <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-neon-green">
           En direct
         </span>
       </div>
 
-      <h1 className="font-display text-2xl font-bold text-white">
+      <h1 className="font-display text-2xl font-normal text-cream">
         En attente du DJ...
       </h1>
-      <p className="mt-3 text-sm text-gray-mid">Le vote va bientot commencer.</p>
+      <p className="mt-3 font-sans text-sm text-gray-mid">
+        Le vote va bientot commencer.
+      </p>
 
     </main>
   )

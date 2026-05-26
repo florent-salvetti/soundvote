@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
+
 type Option = { id: string; label: string; artist: string | null }
 
 export default function LiveResults({
@@ -41,7 +43,6 @@ export default function LiveResults({
       }
 
       // 2. Abonnement apres le fetch frais.
-      // Petite fenetre de course entre la fin du fetch et subscribe() : negligeable au niveau MVP.
       channel = supabase
         .channel(`dj-votes-${roundId}`)
         .on(
@@ -72,29 +73,43 @@ export default function LiveResults({
   }, [roundId])
 
   const total = Object.values(counts).reduce((sum, n) => sum + n, 0)
+  const maxCount = total > 0 ? Math.max(...options.map((o) => counts[o.id] ?? 0)) : 0
 
   return (
-    <div className="mt-6 flex flex-col gap-4">
-      {options.map((o) => {
+    <div className="mt-6 flex flex-col gap-3">
+      {options.map((o, idx) => {
         const count = counts[o.id] ?? 0
         const pct = total > 0 ? Math.round((count / total) * 100) : 0
+        const isLeader = total > 0 && count === maxCount && count > 0
 
         return (
-          <div key={o.id}>
-            <div className="mb-1.5 flex items-baseline justify-between gap-4">
-              <div className="min-w-0">
-                <span className="font-sans text-sm font-semibold text-gray-hi">{o.label}</span>
+          <div
+            key={o.id}
+            className={`rounded-xl border px-4 py-3 transition-colors ${
+              isLeader ? 'border-neon-green/30 bg-neon-green/5' : 'border-border bg-surface'
+            }`}
+          >
+            <div className="mb-2 flex items-center gap-3">
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold ${
+                isLeader ? 'bg-neon-green text-bg' : 'bg-surface-2 text-gray-mid'
+              }`}>
+                {OPTION_LETTERS[idx] ?? idx + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className={`font-sans text-sm font-semibold ${isLeader ? 'text-neon-green' : 'text-cream'}`}>
+                  {o.label}
+                </span>
                 {o.artist && (
-                  <span className="ml-2 text-xs text-gray-mid">{o.artist}</span>
+                  <span className="ml-2 font-mono text-[10px] text-gray-dim">{o.artist}</span>
                 )}
               </div>
-              <span className="shrink-0 font-display text-sm tabular-nums text-neon-green">
-                {count} <span className="text-gray-dim text-xs">({pct}%)</span>
+              <span className={`shrink-0 font-mono text-sm tabular-nums ${isLeader ? 'text-neon-green' : 'text-gray-mid'}`}>
+                {count} <span className="text-[10px] text-gray-dim">({pct}%)</span>
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
               <div
-                className="bar-fill h-full rounded-full bg-neon-green"
+                className={`bar-fill h-full rounded-full ${isLeader ? 'bg-neon-green' : 'bg-gray-dim/50'}`}
                 style={{ '--bar-pct': `${pct}%` } as React.CSSProperties}
               />
             </div>
@@ -102,7 +117,9 @@ export default function LiveResults({
         )
       })}
       {total === 0 && (
-        <p className="text-center text-xs text-gray-dim">En attente des premiers votes...</p>
+        <p className="py-2 text-center font-mono text-[10px] tracking-widest uppercase text-gray-dim">
+          En attente des premiers votes...
+        </p>
       )}
     </div>
   )

@@ -10,6 +10,8 @@ import { type ResultRow } from '@/lib/round-results'
 
 export const dynamic = 'force-dynamic'
 
+const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
+
 type Option = { id: string; label: string; artist: string | null; position: number }
 type Round  = { id: string; question: string; status: string }
 
@@ -94,27 +96,35 @@ export default async function SessionPage({
   const closeRoundAction = activeRound ? closeRound.bind(null, id, activeRound.id) : null
 
   return (
-    <main className="page-bg min-h-screen px-4 py-12 text-white">
+    <main className="page-bg min-h-screen px-5 py-10 text-cream">
       <div className="mx-auto w-full max-w-md">
 
-        <Link
-          href="/dj"
-          className="mb-8 inline-flex items-center gap-1.5 text-xs text-gray-mid transition-colors hover:text-white"
-        >
-          ← Tableau de bord
-        </Link>
+        {/* Header */}
+        <div className="mb-10 flex items-center justify-between">
+          <Link
+            href="/dj"
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim transition-colors hover:text-cream"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M8 2L4 6l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Tableau de bord
+          </Link>
+        </div>
 
-        {/* Code de session + QR */}
+        {/* Code session + QR */}
         <div className="mb-8 rounded-2xl border border-border bg-surface p-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-mid">
+          <p className="mb-3 font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
             Code session
           </p>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
-              <p className="font-display text-5xl font-extrabold tracking-[.2em] text-white text-glow-green">
+              <p className="font-display text-5xl font-normal tracking-[.2em] text-cream text-glow-green">
                 {session.code}
               </p>
-              <p className="mt-2 truncate text-xs text-gray-dim">{joinUrl}</p>
+              <p className="mt-2 truncate font-mono text-[10px] tracking-wider text-gray-dim">
+                {joinUrl}
+              </p>
             </div>
             <div className="shrink-0 self-start rounded-xl bg-white p-2 sm:self-auto">
               <SessionQR url={joinUrl} />
@@ -123,7 +133,7 @@ export default async function SessionPage({
         </div>
 
         {errorMsg && (
-          <p className="mb-6 rounded-xl border border-neon-magenta/20 bg-neon-magenta/10 px-4 py-3 text-sm text-neon-magenta">
+          <p className="mb-6 rounded-xl border border-neon-magenta/20 bg-neon-magenta/10 px-4 py-3 font-sans text-sm text-neon-magenta">
             {decodeURIComponent(errorMsg)}
           </p>
         )}
@@ -133,25 +143,30 @@ export default async function SessionPage({
           <div>
             <div className="mb-5 flex items-center gap-2">
               <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-neon-green" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-neon-green">
+              <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-neon-green">
                 Vote en cours
               </span>
             </div>
 
-            <p className="mb-6 font-display text-xl font-bold text-white">
+            <p className="mb-6 font-display text-2xl font-normal leading-tight text-cream">
               {activeRound.question}
             </p>
 
-            <div className="flex flex-col gap-3">
-              {roundOptions.map((o) => (
+            <div className="flex flex-col gap-2.5">
+              {roundOptions.map((o, idx) => (
                 <div
                   key={o.id}
-                  className="rounded-xl border border-border bg-surface px-5 py-3.5"
+                  className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5"
                 >
-                  <p className="font-sans font-semibold text-gray-hi">{o.label}</p>
-                  {o.artist && (
-                    <p className="mt-0.5 text-xs text-gray-mid">{o.artist}</p>
-                  )}
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 font-mono text-xs font-bold text-gray-mid">
+                    {OPTION_LETTERS[idx] ?? idx + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-sans font-semibold text-cream">{o.label}</p>
+                    {o.artist && (
+                      <p className="mt-0.5 font-mono text-[10px] text-gray-dim">{o.artist}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -166,7 +181,7 @@ export default async function SessionPage({
               <form action={closeRoundAction} className="mt-8">
                 <button
                   type="submit"
-                  className="w-full rounded-xl border border-neon-magenta/30 py-3.5 font-display text-sm font-bold tracking-wide text-neon-magenta transition-all hover:bg-neon-magenta/10 hover:glow-magenta"
+                  className="w-full rounded-xl border border-neon-magenta/30 py-3.5 font-sans text-sm font-semibold text-neon-magenta transition-all hover:bg-neon-magenta/10 hover:glow-magenta"
                 >
                   Clore le vote
                 </button>
@@ -175,55 +190,57 @@ export default async function SessionPage({
           </div>
         ) : (
           <div>
-            {/* ── Historique des manches cloturees ── */}
+            {/* Historique des manches */}
             <RoundHistory rounds={closedRounds} />
 
-            {/* ── Formulaire nouvelle manche ── */}
+            {/* Formulaire nouvelle manche */}
             <form action={launchRoundAction} className="flex flex-col gap-5">
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold uppercase tracking-widest text-gray-mid">
+                <label className="font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
                   Question
                 </label>
                 <input
                   name="question"
                   placeholder="Quelle sera la prochaine chanson ?"
-                  className="rounded-lg border border-border bg-surface-2 px-4 py-3 text-sm text-white placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
+                  className="h-12 rounded-xl border border-border bg-surface-2 px-4 font-sans text-sm text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
                 />
               </div>
 
-              <div className="flex flex-col gap-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-mid">
+              <div className="flex flex-col gap-2.5">
+                <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-gray-dim">
                   Options (2 minimum)
                 </p>
-                {[1, 2, 3, 4].map((n) => (
-                  <div
-                    key={n}
-                    className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4"
-                  >
-                    <span className="text-xs text-gray-dim">
-                      Option {n}{n > 2 ? ' — optionnelle' : ''}
+                {OPTION_LETTERS.map((letter, i) => (
+                  <div key={letter} className="flex items-start gap-3">
+                    <span className="mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 font-mono text-xs font-bold text-gray-mid">
+                      {letter}
                     </span>
-                    <input
-                      name={`option_label_${n}`}
-                      required={n <= 2}
-                      placeholder="Titre"
-                      className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-white placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-                    />
-                    <input
-                      name={`option_artist_${n}`}
-                      placeholder="Artiste (optionnel)"
-                      className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-gray-hi placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
-                    />
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      <input
+                        name={`option_label_${i + 1}`}
+                        required={i < 2}
+                        placeholder={i < 2 ? 'Titre' : 'Titre (optionnel)'}
+                        className="h-11 rounded-xl border border-border bg-surface-2 px-3 font-sans text-sm text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
+                      />
+                      <input
+                        name={`option_artist_${i + 1}`}
+                        placeholder="Artiste (optionnel)"
+                        className="h-9 rounded-xl border border-border bg-surface-2 px-3 font-mono text-[11px] text-cream placeholder-gray-dim outline-none transition-colors focus:border-neon-green/50 focus:ring-1 focus:ring-neon-green/20"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
 
               <button
                 type="submit"
-                className="rounded-xl bg-neon-green py-4 font-display text-sm font-bold tracking-wide text-bg transition-all hover:brightness-110 hover:glow-green"
+                className="flex h-14 items-center justify-center gap-2.5 rounded-xl bg-neon-green font-sans text-base font-semibold text-bg shadow-lg shadow-neon-green/20 transition-all hover:brightness-110"
               >
                 Lancer le vote
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M4 9h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </form>
           </div>

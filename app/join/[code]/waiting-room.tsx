@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { computeWinner, type ResultRow } from '@/lib/round-results'
+import QRCode from 'react-qr-code'
 
 const VOTER_ID_KEY = 'soundvote_voter_id'
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const
@@ -44,6 +45,25 @@ export default function WaitingRoom({
   const [isVoting, setIsVoting] = useState(false)
   const [voteError, setVoteError] = useState<string | null>(null)
   const [results, setResults] = useState<ResultRow[] | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const joinUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/join/${code}`
+    : `https://soundvote.vercel.app/join/${code}`
+
+  const handleShare = useCallback(async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title: 'SoundVote',
+        text: `Vote pour la prochaine chanson — session ${code}`,
+        url: joinUrl,
+      }).catch(() => null)
+    } else {
+      await navigator.clipboard.writeText(joinUrl).catch(() => null)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [code, joinUrl])
 
   // Voter identity
   useEffect(() => {
@@ -284,9 +304,22 @@ export default function WaitingRoom({
       <main className="page-bg min-h-screen px-5 py-10 text-cream">
         <div className="mx-auto w-full max-w-sm">
 
-          <p className="mb-6 font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
-            Session {code}
-          </p>
+          <div className="mb-6 flex items-center justify-between">
+            <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-gray-dim">
+              Session {code}
+            </p>
+            <button
+              onClick={handleShare}
+              aria-label="Inviter des amis"
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.15em] uppercase text-gray-dim transition-colors hover:text-cream"
+            >
+              {copied ? 'Copie !' : 'Inviter'}
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M9 1H5a1 1 0 00-1 1v8a1 1 0 001 1h7a1 1 0 001-1V4L9 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 1v3h3M3 4H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
 
           <h1 className="mb-8 font-display text-2xl font-normal leading-tight text-cream">
             {round.question}
@@ -391,6 +424,35 @@ export default function WaitingRoom({
       <p className="mt-3 font-sans text-sm text-gray-mid">
         Le vote va bientot commencer.
       </p>
+
+      {/* QR code + partage */}
+      <div className="mt-10 flex flex-col items-center gap-4">
+        <div className="rounded-2xl bg-white p-3">
+          <QRCode value={joinUrl} size={120} />
+        </div>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-3 font-mono text-[10px] tracking-[0.18em] uppercase text-gray-mid transition-colors hover:border-cream/20 hover:text-cream"
+        >
+          {copied ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7l3.5 3.5L12 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Lien copie
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M9 1H5a1 1 0 00-1 1v8a1 1 0 001 1h7a1 1 0 001-1V4L9 1z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 1v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M3 4H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1v-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Inviter des amis
+            </>
+          )}
+        </button>
+      </div>
 
     </main>
   )

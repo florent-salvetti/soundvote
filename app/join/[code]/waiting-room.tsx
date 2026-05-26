@@ -95,6 +95,17 @@ export default function WaitingRoom({
       })
   }, [round?.id, round?.status])
 
+  // Recharge l'etat de la manche quand l'onglet redevient visible (retour depuis une autre app)
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.hidden) return
+      // Blur pour eviter qu'Android paste une content:// URI dans un champ fantome
+      ;(document.activeElement as HTMLElement | null)?.blur()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
   // Abonnement rounds uniquement. JAMAIS votes (cf. CLAUDE.md contrainte securite).
   useEffect(() => {
     const supabase = createClient()

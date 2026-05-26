@@ -22,6 +22,11 @@ export default function RoundForm({ launchRoundAction, usedTrackNames = [] }: Pr
   const [question,       setQuestion]       = useState(DEFAULT_QUESTION)
   const [editingQuestion, setEditingQuestion] = useState(false)
   const questionInputRef = useRef<HTMLInputElement>(null)
+
+  // Focus programmatique — evite le autoFocus natif qui rejoue au retour sur l'onglet Android
+  useEffect(() => {
+    if (editingQuestion) questionInputRef.current?.focus()
+  }, [editingQuestion])
   const [slots,       setSlots]       = useState<TrackSlot[]>([null, null, null, null])
   const [activeSlot,  setActiveSlot]  = useState<number | null>(null)
   const [query,       setQuery]       = useState('')
@@ -161,7 +166,6 @@ export default function RoundForm({ launchRoundAction, usedTrackNames = [] }: Pr
                 setEditingQuestion(false)
               }
             }}
-            autoFocus
             className="h-12 w-full rounded-xl border border-neon-green/40 bg-surface-2 px-4 font-sans text-sm text-cream outline-none ring-1 ring-neon-green/20"
           />
         ) : (

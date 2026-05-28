@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
-import { createSession } from '@/app/actions/session'
 import DeleteSessionButton from './delete-session-button'
+import CreateSessionForm from './create-session-form'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
@@ -51,6 +51,12 @@ export default async function DjPage() {
     .eq('dj_id', user.id)
     .eq('status', 'closed')
     .order('created_at', { ascending: false })
+
+  // Nombre de chansons dans la bibliotheque du DJ (pour le selecteur de source)
+  const { count: libraryCount } = await supabase
+    .from('library_songs')
+    .select('id', { count: 'exact', head: true })
+    .eq('dj_id', user.id)
 
   return (
     <main className="page-bg min-h-screen px-5 py-10 text-cream">
@@ -109,18 +115,8 @@ export default async function DjPage() {
           </div>
         </div>
 
-        {/* CTA */}
-        <form className="mb-3">
-          <button
-            formAction={createSession}
-            className="flex h-14 w-full items-center justify-center gap-2.5 rounded-xl bg-neon-green font-sans text-base font-semibold text-bg shadow-lg shadow-neon-green/20 transition-all hover:brightness-110"
-          >
-            Nouvelle session
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M4 9h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </form>
+        {/* CTA + selecteur de source */}
+        <CreateSessionForm libraryCount={libraryCount ?? 0} />
 
         <Link
           href="/dj/import"

@@ -3,6 +3,7 @@ import { logout } from '@/app/actions/auth'
 import { createSession } from '@/app/actions/session'
 import DeleteSessionButton from './delete-session-button'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function DjPage() {
   const supabase = await createClient()
@@ -109,7 +110,7 @@ export default async function DjPage() {
         </div>
 
         {/* CTA */}
-        <form className="mb-8">
+        <form className="mb-3">
           <button
             formAction={createSession}
             className="flex h-14 w-full items-center justify-center gap-2.5 rounded-xl bg-neon-green font-sans text-base font-semibold text-bg shadow-lg shadow-neon-green/20 transition-all hover:brightness-110"
@@ -120,6 +121,16 @@ export default async function DjPage() {
             </svg>
           </button>
         </form>
+
+        <Link
+          href="/dj/import"
+          className="mb-8 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border font-sans text-sm text-gray-mid transition-colors hover:border-cream/20 hover:text-cream"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Importer ma bibliotheque
+        </Link>
 
         {/* Liste des sessions actives */}
         {sessions && sessions.length > 0 && (

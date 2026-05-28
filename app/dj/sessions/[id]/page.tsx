@@ -2,11 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { launchRound, closeRound } from '@/app/actions/round'
+import { launchRound, closeRound, drawLibraryRound } from '@/app/actions/round'
 import LiveResults from './live-results'
 import SessionQR from './session-qr'
 import RoundHistory from './round-history'
 import RoundForm from './round-form'
+import LibraryRoundButton from './library-round-button'
 import { type ResultRow } from '@/lib/round-results'
 
 export const dynamic = 'force-dynamic'
@@ -32,12 +33,14 @@ export default async function SessionPage({
 
   const { data: session } = await supabase
     .from('sessions')
-    .select('id, code, status')
+    .select('id, code, status, source')
     .eq('id', id)
     .eq('dj_id', user.id)
     .single()
 
   if (!session) redirect('/dj')
+
+  const source = (session.source as string) === 'library' ? 'library' : 'itunes'
 
   const { data: activeRound } = await supabase
     .from('rounds')
@@ -72,6 +75,8 @@ export default async function SessionPage({
   type ClosedRound = { id: string; question: string; results: ResultRow[] }
   let closedRounds: ClosedRound[] = []
   let usedTrackNames: string[] = []
+  let availableCount = 0
+
   if (!activeRound) {
     const { data: closedData } = await supabase
       .from('rounds')
@@ -79,6 +84,7 @@ export default async function SessionPage({
       .eq('session_id', id)
       .eq('status', 'closed')
       .order('created_at', { ascending: false })
+
     if (closedData && closedData.length > 0) {
       closedRounds = await Promise.all(
         (closedData as { id: string; question: string }[]).map(async (r) => {
@@ -86,12 +92,48 @@ export default async function SessionPage({
           return { ...r, results: (data as ResultRow[]) ?? [] }
         })
       )
-      // Collecte les titres deja proposes pour filtrer les recos
-      const { data: usedOpts } = await supabase
-        .from('options')
-        .select('label')
-        .in('round_id', closedData.map((r) => r.id))
-      if (usedOpts) usedTrackNames = usedOpts.map((o) => (o.label as string).toLowerCase())
+    }
+
+    if (source === 'itunes') {
+      // usedTrackNames : union de session_used_songs (nouveau code)
+      // et des options des rounds clos (retrocompatibilite sessions anterieures)
+      const usedTitles = new Set<string>()
+
+      const { data: usedKeys } = await supabase
+        .from('session_used_songs')
+        .select('song_key')
+        .eq('session_id', id)
+      for (const k of usedKeys ?? []) {
+        // song_key iTunes = "titre|artiste" : on extrait la partie titre
+        usedTitles.add((k.song_key as string).split('|')[0])
+      }
+
+      if (closedData && closedData.length > 0) {
+        const { data: usedOpts } = await supabase
+          .from('options')
+          .select('label')
+          .in('round_id', (closedData as { id: string }[]).map((r) => r.id))
+        for (const o of usedOpts ?? []) {
+          usedTitles.add((o.label as string).toLowerCase())
+        }
+      }
+
+      usedTrackNames = [...usedTitles]
+    }
+
+    if (source === 'library') {
+      // Pool disponible = total bibliotheque - chansons deja blacklistees pour cette session
+      const [{ count: total }, { count: used }] = await Promise.all([
+        supabase
+          .from('library_songs')
+          .select('id', { count: 'exact', head: true })
+          .eq('dj_id', user.id),
+        supabase
+          .from('session_used_songs')
+          .select('id', { count: 'exact', head: true })
+          .eq('session_id', id),
+      ])
+      availableCount = Math.max(0, (total ?? 0) - (used ?? 0))
     }
   }
 
@@ -100,8 +142,9 @@ export default async function SessionPage({
   const protocol = host.startsWith('localhost') ? 'http' : 'https'
   const joinUrl = `${protocol}://${host}/join/${session.code}`
 
-  const launchRoundAction = launchRound.bind(null, id)
-  const closeRoundAction = activeRound ? closeRound.bind(null, id, activeRound.id) : null
+  const launchRoundAction      = launchRound.bind(null, id)
+  const closeRoundAction       = activeRound ? closeRound.bind(null, id, activeRound.id) : null
+  const drawLibraryRoundAction = drawLibraryRound.bind(null, id)
 
   return (
     <main className="page-bg min-h-screen px-5 py-10 text-cream">
@@ -205,11 +248,18 @@ export default async function SessionPage({
             {/* Historique des manches */}
             <RoundHistory rounds={closedRounds} />
 
-            {/* Formulaire nouvelle manche */}
-            <RoundForm
-              launchRoundAction={launchRoundAction}
-              usedTrackNames={usedTrackNames}
-            />
+            {/* Composition de la prochaine manche selon la source */}
+            {source === 'library' ? (
+              <LibraryRoundButton
+                availableCount={availableCount}
+                drawAction={drawLibraryRoundAction}
+              />
+            ) : (
+              <RoundForm
+                launchRoundAction={launchRoundAction}
+                usedTrackNames={usedTrackNames}
+              />
+            )}
           </div>
         )}
 
